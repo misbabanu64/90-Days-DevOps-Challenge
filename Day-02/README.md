@@ -33,7 +33,7 @@ cat
 ## 📸 Screenshots
 
 ### 1. Linux Terminal Basics
-![Linux Terminal Basics](Screenshots/Screenshot%20(241).png)
+<img src="./Screenshots/Screenshot%20%28241%29.png" alt="Linux Terminal Basics">
 
 ### 2. File Creation and Content
-![File Creation Practice](Screenshots/Screenshot%20(242).png)
+<img src="./Screenshots/Screenshot%20%28242%29.png" alt="File Creation Practice">
