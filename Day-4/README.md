@@ -25,3 +25,8 @@ Tested HTTP connectivity using:
 
 ```bash
 curl -I https://example.com
+```
+
+## 📸 Practical Evidence
+
+Screenshots of the completed Day 04 networking, SSH, and connectivity tasks are available in the Screenshots folder.
