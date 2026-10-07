@@ -16,3 +16,8 @@ Practised:
 pwd
 ls -la
 cd ~
+```
+
+## 📸 Practical Evidence
+
+Screenshots of the completed Day 03 Linux tasks are available in the `Screenshots` folder.
