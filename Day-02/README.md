@@ -29,6 +29,7 @@ cd
 touch
 echo
 cat
+```
 
 ## 📸 Screenshots
 
