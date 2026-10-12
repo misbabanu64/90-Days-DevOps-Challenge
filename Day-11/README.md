@@ -1,141 +1,133 @@
-# Day 11: Docker Storage & Networking 💾🌐
+ # 🐳 Day 11 — Docker Storage & Networking
 
-## 📌 Executive Summary
-As part of the **90 Days of DevOps Challenge**, Day 11 focuses on **Docker Storage Management** and **Container Networking Architectures**.
+> **DevOps Winter Arc — 90 Days DevOps Challenge**  
+> Course Practical: Day 4 — Docker Storage & Networking
 
-By default, container filesystems are ephemeral—data created inside a container is lost when the container is deleted. To achieve production stability, data must persist across container lifecycles using **Docker Volumes**. Additionally, microservices require decoupled and isolated communication networks. This project proves how **User-Defined Bridge Networks** enable automatic DNS name resolution and service discovery, tests backup and recovery procedures, and demonstrates port allocation troubleshooting.
+## 🎯 Objective
 
----
+The objective of this practical was to understand Docker storage, data persistence, container networking, DNS resolution, volume backup and restore, and port conflict resolution.
 
-## 🏗️ Architecture & Core Concepts
+## 🛠️ Technologies Used
 
-### 1. Storage: Volumes vs. Bind Mounts vs. Tmpfs
-| Storage Type | Managed By | Host Location | Persistence | Best Use Case |
-|---|---|---|---|---|
-| **Named Volume** | Docker Engine | `/var/lib/docker/volumes/` | Survives container deletion | Production databases, persistent logs |
-| **Bind Mount** | Host OS / User | Any host filesystem path | Survives container deletion | Source code hot-reloading in development |
-| **tmpfs Mount** | Linux Kernel | Host memory (RAM) | Destroyed on stop | Sensitive data, temporary cache |
+- Docker
+- Docker Volumes
+- Docker Networking
+- PostgreSQL 16 Alpine
+- Linux Commands
+- GitHub
 
-### 2. Networking: Default Bridge vs. User-Defined Bridge
-- **Default Bridge (`bridge`)**: Legacy Docker network. Containers cannot resolve each other by container name.
-- **User-Defined Bridge (`app-net`)**: Modern Docker network. Includes an internal DNS server that resolves container names to private IP addresses automatically.
+## 📚 Tasks Completed
 
----
+### 1. Docker Volume and Data Persistence
 
-## 🛠️ Hands-on Step-by-Step Implementation
+- Created a named Docker volume called `pgdata`.
+- Started a PostgreSQL 16 Alpine container.
+- Stored database files in the named volume.
+- Verified that database data persisted after removing and recreating the container.
 
-### Step 1: Named Volume & Database Persistence Drill
-1. Created an isolated bridge network and a persistent named volume:
-   ```bash
-   docker network create app-net
-   docker volume create pgdata
-Started a PostgreSQL 16 container mounting pgdata:
+**Volume:** `pgdata`  
+**Container:** `db`
 
-Bash
-docker run -d --name db --network app-net \
-  -e POSTGRES_PASSWORD=changeme -e POSTGRES_DB=shop \
-  -v pgdata:/var/lib/postgresql/data postgres:16-alpine
-Created a table and inserted a verification record:
+📸 Screenshot:
 
-Bash
-docker exec -it db psql -U postgres -d shop -c \
-  "CREATE TABLE notes(id serial, msg text); INSERT INTO notes(msg) VALUES ('I survive!');"
-Verified row insertion:
+![Database Data Before Container Deletion](screenshots/01-db-data-before-delete.png)
 
-Bash
-docker exec db psql -U postgres -d shop -c "SELECT * FROM notes;"
-Destruction & Recreation Test: Force-deleted the database container:
+### 2. Data Persistence Verification
 
-Bash
-docker rm -f db
-Re-spawned the container using the exact same volume:
+Docker volumes allow data to remain available even when a container is removed.
 
-Bash
-docker run -d --name db --network app-net \
-  -e POSTGRES_PASSWORD=changeme -v pgdata:/var/lib/postgresql/data postgres:16-alpine
-docker exec db psql -U postgres -d shop -c "SELECT * FROM notes;"
-Result: The record was instantly retrieved, confirming zero data loss.
+The database was recreated using the same named volume to verify data persistence.
 
-Step 2: Cross-Container Communication & Embedded DNS Proof
-Connected a client container on app-net to query the database using the hostname db:
+📸 Screenshot:
 
-Bash
-docker run --rm -it --network app-net -e PGPASSWORD=changeme postgres:16-alpine \
-  psql -h db -U postgres -d shop -c "SELECT count(*) FROM notes;"
-DNS Resolution Scope Comparison:
+![Database Data Persisted](screenshots/02-db-data-persisted.png)
 
-Default Bridge Test (Failure):
+### 3. Docker Networking and DNS Resolution
 
-Bash
-docker run --rm alpine ping -c 1 db
-Output: ping: bad address 'db'
+- Created a custom Docker bridge network named `app-net`.
+- Connected containers to the custom network.
+- Tested container-to-container communication.
+- Used the hostname `db` to connect to the PostgreSQL container.
+- Compared hostname resolution on the default bridge network and the custom bridge network.
 
-Custom Bridge Test (Success via Docker DNS):
+**Network:** `app-net`  
+**Database hostname:** `db`
 
-Bash
-docker run --rm --network app-net alpine ping -c 1 db
-Output: 64 bytes from 172.18.0.2: seq=0 ttl=64
+📸 Screenshot:
 
-Step 3: Volume Disaster Recovery (Backup & Restore)
-Performed a backup of pgdata into a compressed tar archive:
+![Docker Network DNS Proof](screenshots/03-network-dns-proof.png)
 
-Bash
-docker run --rm -v pgdata:/data -v $(pwd):/backup alpine \
-  tar czf /backup/pgdata-backup.tgz -C /data .
-ls -lh pgdata-backup.tgz
-Restored the backup archive into a new target volume (pgdata2):
+### 4. Docker Volume Backup and Restore
 
-Bash
-docker volume create pgdata2
-docker run --rm -v pgdata2:/data -v $(pwd):/backup alpine \
-  tar xzf /backup/pgdata-backup.tgz -C /data
-Step 4: Port Conflict Troubleshooting Drill
-Started container w1 binding to host port 8080:
+Practiced backing up and restoring Docker volume data.
 
-Bash
-docker run -d --name w1 -p 8080:80 nginx:1.27-alpine
-Attempted to allocate port 8080 to a second container w2:
+- Created a backup archive named `pgdata-backup.tgz`.
+- Used a temporary container to access the volume data.
+- Restored the backed-up data into another named volume called `pgdata2`.
 
-Bash
-docker run -d --name w2 -p 8080:80 nginx:1.27-alpine
-Error Triggered: Bind for 0.0.0.0:8080 failed: port is already allocated
+**Original volume:** `pgdata`  
+**Backup file:** `pgdata-backup.tgz`  
+**Restore volume:** `pgdata2`
 
-Diagnosed the port binding on the host OS:
+📸 Screenshot:
 
-Bash
-ss -tulpn | grep 8080
-Remapped container w2 to port 8081 to resolve the collision:
+![Volume Backup and Restore](screenshots/04-volume-backup-restore.png)
 
-Bash
-docker rm -f w2
-docker run -d --name w2 -p 8081:80 nginx:1.27-alpine
-📷 Practical Evidence & Verification
-1. Initial Database Schema Creation & Record Insertion
-Demonstrating creation of notes table and row insertion inside running PostgreSQL container.
+### 5. Docker Port Conflict Resolution
 
-2. Proof of Data Persistence (After Container Destruction)
-Demonstrating data survival after docker rm -f db and attaching pgdata volume to a fresh container.
+Practiced identifying and resolving a port conflict.
 
-3. DNS Resolution Comparison (Default vs. Custom Bridge)
-Comparing DNS failure on the default bridge vs. automatic embedded DNS resolution on app-net.
+- Identified a conflict involving host port `8080`.
+- Used an alternative host port, `8081`, to avoid the conflict.
+- Verified the corrected port mapping.
 
-4. Volume Backup & Restoration Drill
-Creating pgdata-backup.tgz (6.5MB) and extracting it into a fresh target volume (pgdata2).
+📸 Screenshot:
 
-5. Port Conflict Identification & Resolution
-Diagnosing port is already allocated on 8080 using ss -tulpn and remapping service to port 8081.
+![Port Conflict Fix](screenshots/05-port-conflict-fix.png)
 
-🎯 Conclusion
-All Day 11 requirements have been successfully completed:
+## 🌐 Docker Network Diagram
 
-Stateful workloads persist via Docker named volumes.
+```text
+                 Custom Docker Network
+                       app-net
+                          |
+             +------------+------------+
+             |                         |
+       +-----------+             +-----------+
+       |    db     |             |  Client   |
+       | PostgreSQL|<----------->| Container |
+       |    :5432  |             |           |
+       +-----------+             +-----------+
+             |
+        Named Volume
+          pgdata
+             |
+      Persistent Database
+             |
+      Backup: pgdata-backup.tgz
+             |
+        Restore Volume
+           pgdata2
 
-Microservices communicate reliably using custom bridge network DNS discovery.
+📂 Project Structure
+Day-11/
+├── README.md
+└── screenshots/
+    ├── 01-db-data-before-delete.png
+    ├── 02-db-data-persisted.png
+    ├── 03-network-dns-proof.png
+    ├── 04-volume-backup-restore.png
+    └── 05-port-conflict-fix.png
 
-Volume backup and restoration verified using temporary Alpine utility containers.
+✅ Conclusion
 
-Host port conflicts resolved systematically using Linux network inspection tools.
+This practical strengthened my understanding of Docker storage and networking.
 
-🧹 Clean Up Command
-Bash
-docker rm -f w1 w2 db
+I gained hands-on experience with persistent storage, custom networks, DNS resolution, volume backup and restore, and port conflict troubleshooting.
+
+Every day, I am improving my Linux and DevOps skills through practical implementation as part of my 90 Days DevOps Challenge.
+
+Challenge: DevOps Winter Arc — 90 Days DevOps Challenge
+Author: Misba Banu Jakati
+
+#90DaysDevOpsChallenge #DevOps #Docker #Linux #CloudComputing #LearningByDoing
