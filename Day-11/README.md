@@ -1,32 +1,31 @@
- # Day 11: Docker Storage & Networking 🐳
+# Day 11: Docker Storage & Networking 💾🌐
 
-## 📌 Overview
-Part of the 90 Days of DevOps Challenge.
-Hands-on practice of Docker Volumes, Custom Bridge Networks, DNS resolution, and Port troubleshooting.
+## 📌 Executive Summary
+As part of the **90 Days of DevOps Challenge**, Day 11 focuses on **Docker Storage Management** and **Container Networking Architectures**.
 
----
-
-## 🚀 Tasks Completed
-
-### Task 1: Persistent PostgreSQL with Docker Volume
-- Created custom bridge network `app-net` and volume `pgdata`.
-- Inserted data into PostgreSQL container.
-- Deleted container and recreated it with the same volume. Data was successfully retained.
-
-### Task 2: Container Networking & DNS Verification
-- Connected a client container on `app-net` to the database using hostname `db`.
-- Verified that default bridge network fails DNS resolution, while custom bridge resolves `db` successfully.
-
-### Task 3: Volume Backup and Restore
-- Backed up `pgdata` volume into a compressed tar file `pgdata-backup.tgz`.
-- Restored the backup archive into a new volume `pgdata2`.
-
-### Task 4: Port Conflict Troubleshooting
-- Simulated port allocation conflict on host port `8080`.
-- Identified the port using `ss -tulpn | grep 8080`.
-- Resolved the conflict by running the container on port `8081`.
+By default, container filesystems are ephemeral—data created inside a container is lost when the container is deleted. To achieve production stability, data must persist across container lifecycles using **Docker Volumes**. Additionally, microservices require decoupled and isolated communication networks. This project proves how **User-Defined Bridge Networks** enable automatic DNS name resolution and service discovery, tests backup and recovery procedures, and demonstrates port allocation troubleshooting.
 
 ---
 
-## 📷 Screenshots
-Screenshots uploaded in this folder.
+## 🏗️ Architecture & Core Concepts
+
+### 1. Storage: Volumes vs. Bind Mounts vs. Tmpfs
+| Storage Type | Managed By | Host Location | Persistence | Best Use Case |
+|---|---|---|---|---|
+| **Named Volume** | Docker Engine | `/var/lib/docker/volumes/` | Survives container deletion | Production databases, persistent logs |
+| **Bind Mount** | Host OS / User | Any host filesystem path | Survives container deletion | Source code hot-reloading in development |
+| **tmpfs Mount** | Linux Kernel | Host memory (RAM) | Destroyed on stop | Sensitive data, temporary cache |
+
+### 2. Networking: Default Bridge vs. User-Defined Bridge
+- **Default Bridge (`bridge`)**: Legacy Docker network. Containers cannot resolve each other by container name.
+- **User-Defined Bridge (`app-net`)**: Modern Docker network. Includes an internal DNS server that resolves container names to private IP addresses automatically.
+
+---
+
+## 🛠️ Hands-on Step-by-Step Implementation
+
+### Step 1: Named Volume & Database Persistence Drill
+1. Created an isolated bridge network and a persistent named volume:
+   ```bash
+   docker network create app-net
+   docker volume create pgdata
