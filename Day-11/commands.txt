@@ -1,0 +1,32 @@
+# Day 11 - Docker Storage and Networking
+# DevOps Winter Arc - 90 Days Challenge
+
+# 1. Create a custom Docker network
+docker network create app-net
+
+# 2. Create a named Docker volume
+docker volume create pgdata
+
+# 3. Check Docker networks
+docker network ls
+
+# 4. Check Docker volumes
+docker volume ls
+
+# 5. Inspect the custom network
+docker network inspect app-net
+
+# 6. Inspect the database volume
+docker volume inspect pgdata
+
+# 7. Check running containers
+docker ps
+
+# 8. Check all containers
+docker ps -a
+
+# 9. Check Docker images
+docker images
+
+# 10. Check Docker system information
+docker info
