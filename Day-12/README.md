@@ -1,91 +1,157 @@
- Day 12: Docker Compose Multi-Container Stack
+# Day 12 - Docker Compose: Flask + PostgreSQL + Redis
 
-## 📌 Project Overview
-Orchestrating a multi-service web architecture using **Docker Compose**. The stack connects a Python Flask API to a PostgreSQL relational database and an in-memory Redis cache with health checks, persistent volumes, and fault recovery.
+A multi-container application defined in a single `compose.yaml`. A Flask web service talks to PostgreSQL (persistent visits) and Redis (hit counter), with health checks, dependency readiness, a named volume, and an automatic restart policy.
 
----
+## Architecture
 
-## 🏛 Architecture Diagram
-+-------------------------------------------------------------+
-|                     Host Machine (:5000)                    |
-+-------------------------------------------------------------+
-|
-v
-+-------------------------------------------------------------+
-|                Docker Bridge Network                        |
-|                                                             |
-|   +-------------------+                                     |
-|   |    web (Flask)    | <------ Port 5000                   |
-|   +-------------------+                                     |
-|         |          |                                        |
-|         | (db:5432)| (redis:6379)                           |
-|         v          v                                        |
-|   +----------+   +------------+                             |
-|   | db (PG)  |   |   redis    |                             |
-|   +----------+   +------------+                             |
-|        |               |                                    |
-|   [pgdata vol]   [redisdata vol]                            |
-+-------------------------------------------------------------+
+```mermaid
+flowchart LR
+    U[User / curl :5000] --> W[web - Flask]
+    W -->|host: db :5432| D[(db - PostgreSQL 16)]
+    W -->|host: redis :6379| R[(redis - Redis 7)]
+    D --- V[(pgdata named volume)]
+```
 
+| Service | Role |
+|---------|------|
+| `web` | Flask app. `/` increments the Redis counter and inserts a visit row in PostgreSQL. `/health` returns `ok`. |
+| `db` | PostgreSQL 16. Data stored in the `pgdata` named volume. |
+| `redis` | Redis 7. Used as a hit counter (no volume, so it can reset). |
 
----
+## Project structure
 
-## 🛠 Key Engineering Concepts
-- **Service Discovery**: Containers communicate using internal DNS service names (`db`, `redis`) instead of host IP addresses.
-- **Health Checks & Dependency Readiness**: Configured `pg_isready` and `redis-cli ping` with `depends_on: condition: service_healthy` to guarantee dependencies are ready before traffic starts.
-- **Data Persistence**: Managed named volumes (`pgdata`, `redisdata`) ensure state survives container recreation lifecycles.
-- **Fault Recovery**: Implemented `restart: unless-stopped` to automatically revive containers upon failure.
-- **Secret Isolation**: Kept credentials out of Git via `.gitignore` while committing sanitized `.env.example`.
+```
+Day-12/
+├── compose.yaml
+├── .env.example
+├── .gitignore
+├── README.md
+├── app/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── Dockerfile
+└── evidence/
+    ├── 01-compose-status.png
+    ├── 02-app-response.png
+    ├── 03-persistence-test.png
+    └── 04-restart-test.png
+```
 
----
+## Setup
 
-## 🚀 Execution & Verification Commands
+```bash
+git clone https://github.com/misbabanu64/90-Days-DevOps-Challenge.git
+cd 90-Days-DevOps-Challenge/Day-12
+cp .env.example .env
+```
 
-### 1. Stack Initialization
+`.env` is git-ignored. Only `.env.example` is committed. Never commit real credentials.
+
+## Run
+
 ```bash
 docker compose config
 docker compose up -d --build
 docker compose ps
-2. Endpoint & Health Checks
-Bash
+```
+
+`db` and `redis` should become healthy and `web` should be running.
+
+## Test
+
+```bash
+curl http://localhost:5000/
 curl http://localhost:5000/
 curl http://localhost:5000/health
-3. Data Persistence Test
-Bash
+docker compose logs --tail=50 web
+```
+
+Expected: both counters increase on every call and `/health` returns `ok`.
+
+![Compose status](evidence/01-compose-status.png)
+
+![App response](evidence/02-app-response.png)
+
+## Persistence test
+
+```bash
 docker compose down
 docker compose up -d
 curl http://localhost:5000/
-# Verified: PostgreSQL visit count continued incrementing without data loss.
-4. Restart Policy Test
-Bash
+```
+
+The PostgreSQL visit count continues because data lives in the `pgdata` named volume. The Redis counter resets because Redis has no volume.
+
+![Persistence test](evidence/03-persistence-test.png)
+
+## Restart policy test
+
+```bash
 docker kill $(docker compose ps -q web)
 docker compose ps
 curl http://localhost:5000/
-# Verified: Web container automatically recovered and bound to port 5000.
-📸 Evidence & Artifacts
-The test execution logs and visual verification are stored in the evidence/ directory:
+```
 
-01-compose-status.png: Stack running with healthy database and cache probes.
+Compose restarts `web` automatically because of `restart: unless-stopped`.
 
-02-app-response.png: Root counter increments and /health reporting ok.
+![Restart test](evidence/04-restart-test.png)
 
-03-persistence-test.png: Persistent visits count across down and up lifecycles.
+## Observations
 
-04-restart-test.png: Automatic recovery of the web service upon termination.
+- `db` and `redis` became healthy before `web` started (`condition: service_healthy`).
+- Redis hits and PostgreSQL visits both increased with repeated requests.
+- After `down` and `up`, the PostgreSQL visit count continued, but the Redis counter reset.
+- After `docker kill`, the `web` service restarted and `/` responded again.
 
-💬 Interview Readiness & Reflection
-1. What problem does Docker Compose solve?
+## Troubleshooting
 
-It provides a declarative, single-command orchestration layer for multi-container applications, automating networks, volumes, and service links.
+| Symptom | What to check |
+|---------|---------------|
+| YAML/config error | Run `docker compose config`; check indentation (spaces only) and service names |
+| Connection refused | Check db/redis health, logs, and `service_healthy` dependencies |
+| DB connection fails | Confirm `DB_HOST=db` and credentials in `.env`; never use `localhost` for another container |
+| Postgres data disappears | Check `pgdata` is declared under top-level `volumes`; make sure `down -v` was not used |
+| Redis counter resets | Expected without a Redis volume |
+| Port 5000 already allocated | Use `docker ps` or `ss -lntp`; stop the conflicting service or change the host port |
+| Code changes not visible | Run `docker compose up -d --build` |
+| `.env` shows in `git status` | Check `.gitignore`; rotate any exposed credential |
 
-2. Does depends_on guarantee database readiness?
+## Stop / cleanup
 
-No. By default, depends_on only waits for the container process to launch. Pairing it with a health check (pg_isready) and condition: service_healthy ensures true readiness.
+```bash
+docker compose down
+docker compose down -v
+```
 
-3. Why use service name db instead of localhost?
+`down` keeps the named volume. `down -v` also deletes the data, so use it carefully.
 
-Inside a container, localhost points strictly to that specific container's loopback interface. Docker's internal DNS network resolves the service name db to the database container IP.
+## Reflection
 
-4. What is the difference between down and down -v?
+**What does each service do?** `web` serves the app, `db` stores visits permanently, `redis` stores a fast hit counter.
 
-docker compose down removes containers and networks but preserves named volumes. docker compose down -v permanently destroys volumes along with their persistent data.
+**How does web discover PostgreSQL and Redis?** Compose creates a project network with built-in DNS, so the app uses the service names `db` and `redis`.
+
+**What proves the DB was ready before the app started?** `docker compose ps` showed `db` as healthy, and `web` uses `depends_on` with `condition: service_healthy`.
+
+**Why did PostgreSQL data persist but Redis reset?** Postgres writes to the `pgdata` named volume, which survives `down`. Redis has no volume, so its data was lost with the container.
+
+**What would I change for production?** Use a secrets manager instead of `.env`, add a Redis volume if needed, use gunicorn instead of the Flask dev server, add a dedicated network, resource limits, monitoring, and database backups.
+
+## Interview Readiness
+
+1. **What problem does Docker Compose solve?**
+   It defines and runs multi-container applications declaratively (services, networks, volumes) and starts the stack with one command.
+2. **Does `depends_on` guarantee database readiness?**
+   No. By default it only controls start order. Use a health check with `condition: service_healthy`.
+3. **Why use `db` instead of `localhost`?**
+   Inside a container, `localhost` is that container itself. Docker's internal DNS resolves `db` to the database container.
+4. **Named volume vs container writable layer?**
+   A named volume is managed separately and survives container replacement. The writable layer is deleted with the container.
+5. **What does a health check do?**
+   It periodically tests a service and reports its health. `service_healthy` uses that for dependency readiness.
+6. **What does `restart: unless-stopped` mean?**
+   Docker restarts the service after failures and daemon restarts, unless it was explicitly stopped.
+7. **Why not commit `.env`?**
+   It can contain secrets. Commit `.env.example` and keep real values local.
+8. **`down` vs `down -v`?**
+   `down` removes containers and networks but keeps named volumes. `down -v` also deletes volumes and their data.
