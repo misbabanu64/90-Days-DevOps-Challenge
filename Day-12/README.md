@@ -60,8 +60,12 @@ curl http://localhost:5000/
 Bash
 docker kill $(docker compose ps -q web)
 docker compose ps
+
+```
 curl http://localhost:5000/
 # Verified: Web container automatically recovered and bound to port 5000.
+
+
 📸 Evidence & Artifacts
 The test execution logs and visual verification are stored in the evidence/ directory:
 
