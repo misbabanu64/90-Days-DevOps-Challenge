@@ -107,7 +107,7 @@ Revert push hone pe pipeline dobara chalegi aur naya SHA tag banega.
 
 ## Trivy scan result
 
-`<Actions run ke Trivy step se asli result yahan likhna. Abhi tak scan screenshot nahi hai.>`
+15/10/2026 ke pipeline run me Trivy step (`aquasecurity/trivy-action@0.35.0`) pass hua aur scan output me **Total: 0** dikha. Ye sirf is run ka result hai. Naye base image ya dependencies aane par result badal sakta hai.
 
 ## Learnings
 
