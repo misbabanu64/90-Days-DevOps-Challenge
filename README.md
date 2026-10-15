@@ -2,7 +2,7 @@
 
 My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Docker Compose and Container Security. Every day has its own folder with commands, evidence (screenshots/reports) and a README explaining what I did and learned.
 
-**Status:** Day 13 of 90 completed 🚀
+**Status:** Day 14 of 90 completed 🚀
 
 ## Progress
 
@@ -21,12 +21,14 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 11 | Docker Storage & Networking | [Day-11](Day-11) |
 | 12 | Docker Compose: Flask + PostgreSQL + Redis | [Day-12](Day-12) |
 | 13 | Docker Security & Optimization (Trivy) | [Day-13](Day-13) |
-| 14+ | In progress | Coming soon |
+| 14 | Docker in CI/CD (GitHub Actions) | [Day-14](Day-14) |
+| 15+ | In progress | Coming soon |
 
 ## Highlights
 
 - **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
 - **Day 13:** Reduced an unsafe image from 1.77 GB to 185 MB and HIGH findings from 401 to 44 (CRITICAL 16 to 0) using Trivy, a non-root user, runtime secrets and a hardened `docker run`. Remaining findings are documented, not hidden.
+- **Day 14:** GitHub Actions pipeline lints the Dockerfile (Hadolint), builds the image, runs a smoke test and a Trivy scan (action pinned to `0.35.0`), then pushes an immutable SHA tag to Docker Hub. A paths filter runs it only when Day-14 files or the workflow change.
 
 ## Skills I am building
 
