@@ -83,3 +83,30 @@ After kubectl rollout undo, the image is back to nginx:1.28 and 3/3 Pods are Run
 - nginx-deployment.yaml is the initial manifest (image nginx:1.27). The cluster is now running nginx:1.28 after the rollback, so I will not re-apply that file.
 - No kubeconfig, tokens or secrets are included in this folder.
 - The kind cluster day16 was created only for this lab and can be deleted after submission.
+
+## Bonus: maxSurge 1 and maxUnavailable 0
+
+I created a separate Deployment `nginx-bonus` (manifest: `nginx-bonus-deployment.yaml`) with an explicit strategy, so the shared `nginx-deployment` was not touched:
+
+```yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+```
+
+I updated the image from nginx:1.27 to nginx:1.28 (valid update). The rollout completed successfully and the Deployment shows 3/3 Pods with image nginx:1.28. The old ReplicaSet was scaled to 0 and the new one to 3.
+
+**What I observed in the live watch:** Each time, one new Pod was created first and became Running 1/1. Only after that was one old Pod set to Terminating. This repeated 3 times. At most 4 Pods existed at once (3 + 1 surge), and the number of Ready Pods never dropped below 3. Old Pods show "Completed" after Terminating because their container exited.
+
+**How these settings affect availability:**
+- `maxSurge: 1` lets Kubernetes create 1 extra Pod above the 3 replicas.
+- `maxUnavailable: 0` means an old Pod is removed only after a new Pod is Ready, so there is no capacity loss.
+- Trade-off: the update needs room for 1 extra Pod and can be a bit slower than the default 25%/25%.
+
+Note: the change-cause is the same on revisions 1 and 2 because I changed the annotation before updating the image, so it was applied to the existing revision 1 as well.
+
+### Evidence
+![bonus watch](evidence/5-bonus-watch.png)
+![bonus verified](evidence/6-bonus-verified.png)
