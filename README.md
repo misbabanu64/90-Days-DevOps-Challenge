@@ -23,7 +23,8 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 13 | Docker Security & Optimization (Trivy) | [Day-13](Day-13) |
 | 14 | Docker in CI/CD (GitHub Actions) | [Day-14](Day-14) |
 | 15 | Kubernetes Fundamentals (Nginx on kind) | [Day-15](Day-15-Kubernetes-Fundamentals) |
-| 16+ | In progress | Coming soon |
+| 16 | Deployments & Rollouts (rolling updates, rollback) | [Day-16](Day-16-Deployments-Rollouts) |
+| 17+ | In progress | Coming soon |
 
 ## Highlights
 
