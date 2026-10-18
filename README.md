@@ -24,7 +24,8 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 14 | Docker in CI/CD (GitHub Actions) | [Day-14](Day-14) |
 | 15 | Kubernetes Fundamentals (Nginx on kind) | [Day-15](Day-15-Kubernetes-Fundamentals) |
 | 16 | Deployments & Rollouts (rolling updates, rollback) | [Day-16](Day-16-Deployments-Rollouts) |
-| 17+ | In progress | Coming soon |
+| 17 | Services & Networking (ClusterIP, DNS, EndpointSlices) | [Day-17](Day-17-Services-Networking) |
+| 18+ | In progress | Coming soon |
 
 ## Highlights
 
