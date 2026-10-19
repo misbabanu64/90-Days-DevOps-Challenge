@@ -1,25 +1,47 @@
-# Day 18: ConfigMaps, Secrets & Namespaces
-
-DevOps Winter Arc, 90 Days Challenge, Kubernetes Week 3.
+# Day 18: Kubernetes ConfigMaps, Secrets & Namespaces
 
 ## Overview
 
-Is din ka focus: same Nginx workload ko `dev` aur `prod` namespaces mein alag configuration ke saath chalana.
+This project demonstrates environment-specific configuration in Kubernetes using ConfigMaps, Secrets, and Namespaces. The same Nginx application is deployed in separate `dev` and `prod` namespaces with different configurations and web page content.
 
-- Namespaces: `dev` aur `prod`
-- ConfigMap `site`: `APP_ENV` aur `index.html` (mounted file)
-- Secret `db-secret`: `DB_PASSWORD` (sirf dummy values, lab use)
-- Deployment `web`: nginx:1.27, 1 replica, dono namespaces mein same YAML
-- Update behavior: mounted file vs environment variable
+## Objectives
 
-## Environment
+- Create isolated Kubernetes namespaces for development and production.
+- Manage application settings using ConfigMaps.
+- Pass Secret values to containers through environment variables.
+- Mount ConfigMap data as files inside an Nginx container.
+- Observe configuration updates and environment variable behavior.
 
-- Windows laptop + WSL Ubuntu
-- Kubernetes: kind cluster `day17` (node version v1.31.0)
+## Technologies Used
 
-## Setup Steps
+- Kubernetes
+- Docker / Nginx
+- YAML
+- kubectl
+- Git and GitHub
+- WSL Ubuntu
 
-### Task A: Namespaces
+## Project Structure
+
+```text
+Day-18-ConfigMaps-Secrets-Namespaces/
+├── configmap-dev.yaml
+├── configmap-prod.yaml
+├── deployment.yaml
+├── README.md
+└── evidence/
+    ├── 1-namespaces.png
+    ├── 2-configmaps.png
+    ├── 3-secrets.png
+    ├── 4-pages-and-env.png
+    ├── 5-config-update-before-restart.png
+    ├── 6-config-update-after-restart.png
+    └── 7-prod-unchanged.png
+```
+
+## Implementation Steps
+
+### 1. Create Namespaces
 
 ```bash
 kubectl create namespace dev
@@ -27,87 +49,113 @@ kubectl create namespace prod
 kubectl get namespaces
 ```
 
-### Task B: ConfigMaps
+### 2. Apply ConfigMaps
 
 ```bash
 kubectl apply -f configmap-dev.yaml -n dev
 kubectl apply -f configmap-prod.yaml -n prod
-kubectl get configmap site -n dev
-kubectl get configmap site -n prod
 ```
 
-### Task C: Secrets (dummy values only)
+### 3. Create Secrets
+
+Dummy credentials were used for this lab.
 
 ```bash
-kubectl create secret generic db-secret --from-literal=password=dev-pass -n dev
-kubectl create secret generic db-secret --from-literal=password=prod-pass -n prod
-kubectl get secret db-secret -n dev
-kubectl get secret db-secret -n prod
+kubectl create secret generic db-secret \
+  --from-literal=password=dev-pass -n dev
+
+kubectl create secret generic db-secret \
+  --from-literal=password=prod-pass -n prod
 ```
 
-### Task D: Deployment
+### 4. Deploy the Application
 
 ```bash
 kubectl apply -f deployment.yaml -n dev
 kubectl apply -f deployment.yaml -n prod
+
 kubectl get pods -n dev
 kubectl get pods -n prod
 ```
 
-## Task F: Config Update Observations (dev)
+### 5. Verify Both Environments
 
-### Edit se pehle
+Run these commands in separate terminals:
 
-```
-$ curl http://localhost:8081
-<h1>Hello from DEV</h1>
-<p>Winter Arc · Day 18</p>
-
-$ kubectl exec -n dev deploy/web -- printenv APP_ENV
-dev
+```bash
+kubectl port-forward -n dev deploy/web 8081:80
 ```
 
-### Edit ke baad
-
-```
-$ curl http://localhost:8081
-<h1>Hello from DEV UPDATED</h1>
-<p>Winter Arc · Day 18(Updated)</p>
-
-$ kubectl rollout restart deployment/web -n dev
-deployment.apps/web restarted
-
-$ kubectl exec -n dev deploy/web -- printenv APP_ENV
-dev-v2
+```bash
+kubectl port-forward -n prod deploy/web 8082:80
 ```
 
----
+Open the following URLs in your browser:
 
-## Interview / Reflection Questions
+- Development: http://localhost:8081
+- Production: http://localhost:8082
 
-### 1. What is the difference between a ConfigMap and a Secret?
-- **ConfigMap:** Non-sensitive configuration data (jaise environment variables, ports, configuration files) ko plain text mein store karta hai.
-- **Secret:** Sensitive credentials (jaise passwords, tokens, API keys) ko store karta hai jo default roop se base64-encoded hote hain[cite: 1, 3].
+Check the environment configuration:
 
-### 2. Why must referenced ConfigMaps and Secrets exist in the Pod's namespace?
-- ConfigMaps aur Secrets namespace-scoped resources hain[cite: 1, 3]. Kubernetes Pod security aur namespace isolation ki wajah se Pod sirf usi namespace ke objects ko reference/mount kar sakta hai jismein woh khud chal raha hai[cite: 1, 3]. Cross-namespace reference allow nahi hota[cite: 3].
+```bash
+kubectl exec -n dev deploy/web -- printenv APP_ENV
+kubectl exec -n prod deploy/web -- printenv APP_ENV
+```
 
-### 3. What is the difference between environment variables and mounted files?
-- **Environment Variables:** Pod container start hote waqt process environment mein inject hote hain[cite: 3]. Agar source ConfigMap update ho jaye, tab bhi environment variable bina Pod restart/recreate kiye change nahi hota[cite: 3].
-- **Mounted Files:** ConfigMap data file system par directory ke taur par mount hota hai[cite: 3]. Jab ConfigMap edit hota hai, toh kubelet mounted files ko automatically update kar deta hai (delay ke baad) bina container restart kiye[cite: 3].
+### 6. Observe Configuration Updates
 
-### 4. Why does changing a ConfigMap not update an existing container's environment automatically?
-- Linux mein chalte hue running process ke environment variables ko bahar se inject ya dynamically modify nahi kiya ja sakta[cite: 3]. Environment values container launch ke waqt freeze ho jaate hain, isliye update load karne ke liye `rollout restart` zaroori hota hai[cite: 3].
+Edit the development ConfigMap and change the page content and `APP_ENV` value.
 
-### 5. Why is base64 not sufficient to protect a Secret?
-- Base64 sirf ek encoding scheme hai, encryption nahi[cite: 3]. Koi bhi person base64 encoded string ko bina kisi key ya password ke asani se decode kar sakta hai[cite: 3]. Real security ke liye Kubernetes RBAC, KMS-based Encryption at Rest, ya HashiCorp Vault jaise dedicated secrets manager use hone chahiye[cite: 3].
+```bash
+kubectl edit configmap site -n dev
+kubectl rollout restart deployment/web -n dev
+kubectl rollout status deployment/web -n dev
+```
 
-### 6. What can cause CreateContainerConfigError?
-- Referenced ConfigMap ya Secret specified namespace mein exist na karta ho[cite: 3].
-- Deployment YAML ke andar mention ki gayi `key` ConfigMap ya Secret ke actual keys se match na kar rahi ho[cite: 3].
-- Secret/ConfigMap ka naam galat type kiya gaya ho[cite: 3].
+Mounted ConfigMap files can update after a delay. Environment variables do not automatically change in an already-running container; restarting the Deployment allows the container to load the updated values.
 
-### 7. How do namespaces help separate dev and prod resources?
-- Same cluster par logical isolation provide karte hain[cite: 1].
-- Same manifest / resource names (jaise Deployment name `web`, ConfigMap name `site`) dono environments mein bina kisi naming conflict ke coexist kar sakte hain[cite: 1, 2].
-- Per-namespace access control (RBAC), quotas, aur limits set kiye ja sakte hain[cite: 3].
+## Evidence Screenshots
+
+### 1. Namespace Creation
+
+![Namespace Creation](evidence/1-namespaces.png)
+
+### 2. ConfigMaps
+
+![ConfigMaps](evidence/2-configmaps.png)
+
+### 3. Secrets
+
+![Secrets](evidence/3-secrets.png)
+
+### 4. Pages and Environment Variables
+
+![Pages and Environment Variables](evidence/4-pages-and-env.png)
+
+### 5. Configuration Before Update
+
+![Configuration Before Update](evidence/5-config-update-before-restart.png)
+
+### 6. Configuration After Update
+
+![Configuration After Update](evidence/6-config-update-after-restart.png)
+
+### 7. Production Verification
+
+![Production Unchanged](evidence/7-prod-unchanged.png)
+
+## Key Learnings
+
+- ConfigMaps store non-sensitive configuration data.
+- Secrets are used for sensitive configuration, but Base64 encoding alone is not encryption.
+- Namespaces help isolate development and production resources.
+- Environment variables and mounted configuration files behave differently during updates.
+- Referenced ConfigMaps and Secrets must exist in the appropriate namespace.
+
+## Conclusion
+
+Successfully practiced Kubernetes environment isolation, configuration management, Secret references, mounted configuration files, and configuration updates using separate development and production namespaces.
+
+**Repository:** [90-Days-DevOps-Challenge](https://github.com/misbabanu64/90-Days-DevOps-Challenge)
+
+**Focus:** Hands-on DevOps and Kubernetes learning.
