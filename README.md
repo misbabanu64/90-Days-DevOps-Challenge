@@ -26,8 +26,8 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 16 | Deployments & Rollouts (rolling updates, rollback) | [Day-16](Day-16-Deployments-Rollouts) |
 | 17 | Services & Networking (ClusterIP, DNS, EndpointSlices) | [Day-17](Day-17-Services-Networking) |
 | 18 | Kubernetes ConfigMaps, Secrets & Namespaces | [Day-18](./Day-18-ConfigMaps-Secrets-Namespaces) |
-| 19 | In Progress | Coming Soon |
-
+| 19 | Storage & StatefulSets (PV, PVC, PostgreSQL) | [Day-19](Day-19-Storage-StatefulSets) |
+| 20 | In Progress | Coming Soon |
 ## Highlights
 
 - **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
