@@ -1,397 +1,199 @@
-Day 20: Kubernetes Health Probes, Resource Management & Autoscaling (HPA)
-📌 Mission
+# 🚀 Day 20: Kubernetes Health, Resources & Autoscaling
 
-Build a self-healing, resource-aware Kubernetes application that monitors its health, manages CPU and memory resources, and automatically scales from 1 to 5 Pods based on CPU utilization.
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Hands--On-326CE5?logo=kubernetes&logoColor=white)
+![DevOps](https://img.shields.io/badge/DevOps-Winter%20Arc-orange)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
-🎯 Learning Objectives
-Verify Metrics Server installation and resource metrics.
-Configure CPU and memory requests and limits.
-Implement Startup, Readiness, and Liveness probes.
-Understand Kubernetes Quality of Service (QoS) classes.
-Configure Horizontal Pod Autoscaler (HPA).
-Perform load testing and observe automatic scaling.
-Test readiness probe failures and application recovery.
-Troubleshoot common Kubernetes monitoring and autoscaling issues.
-🛠️ Task A: Metrics Server Verification
+## 📌 Project Overview
 
-Metrics Server collects resource usage metrics from Kubernetes nodes and containers. These metrics are used by commands such as kubectl top and by the Horizontal Pod Autoscaler.
+As part of the **DevOps Winter Arc – 90 Days Challenge**, I worked on Kubernetes health monitoring, resource management, and automatic Pod scaling.
 
-Configuration
+The objective was to deploy a resource-aware application, configure health probes, monitor CPU and memory usage, and use Horizontal Pod Autoscaler (HPA) to scale Pods based on CPU utilization.
 
-Installed Metrics Server in the local Kind cluster with the --kubelet-insecure-tls argument for local development.
+## 🎯 What I Learned
 
-Note: Disabling kubelet TLS certificate verification is suitable only for this local lab setup. Use properly configured TLS verification in production.
-Verification Commands
-kubectl get pods -n kube-system
+- Verified Metrics Server and Kubernetes resource metrics.
+- Configured CPU and memory requests and limits.
+- Implemented Startup, Readiness, and Liveness probes.
+- Inspected Kubernetes Quality of Service (QoS).
+- Configured Horizontal Pod Autoscaler (HPA).
+- Generated HTTP load and monitored autoscaling.
+- Tested readiness probe failure and recovery.
+- Practiced troubleshooting using `kubectl`.
+
+## 🛠️ Tools & Technologies
+
+- Kubernetes
+- Kind
+- kubectl
+- Metrics Server
+- Horizontal Pod Autoscaler
+- BusyBox
+- YAML
+
+## 🏗️ Project Configuration
+
+| Setting | Value |
+|---|---|
+| Application | php-apache |
+| Namespace | `day20-health` |
+| Initial replicas | 1 |
+| Minimum replicas | 1 |
+| Maximum replicas | 5 |
+| Target CPU utilization | 50% |
+| CPU request | 200m |
+| CPU limit | 500m |
+| Memory request | 64Mi |
+| Memory limit | 128Mi |
+| QoS class | Burstable |
+
+## ❤️ Kubernetes Health Probes
+
+| Probe | Purpose |
+|---|---|
+| Startup | Gives the application time to initialize. |
+| Readiness | Controls whether a Pod receives Service traffic. |
+| Liveness | Detects an unhealthy or stuck container and can trigger a restart. |
+
+I tested readiness probe failure using an invalid endpoint, observed the Pod become NotReady, and restored the correct endpoint to verify recovery.
+
+## 📊 Resource Management & QoS
+
+Configured CPU and memory requests and limits to manage container resources.
+
+- **Guaranteed:** Every container has matching CPU and memory requests and limits.
+- **Burstable:** Resource requests or limits are configured, but the Pod does not meet Guaranteed criteria.
+- **BestEffort:** No CPU or memory requests or limits are configured.
+
+The application used the **Burstable** QoS class.
+
+## 📈 Horizontal Pod Autoscaler (HPA)
+
+Configured HPA to scale the `php-apache` Deployment according to CPU utilization.
+
+- Minimum replicas: 1
+- Maximum replicas: 5
+- Target CPU utilization: 50%
+
+Generated HTTP traffic using BusyBox and monitored CPU usage, HPA metrics, and Pod replicas. Observed scaling behavior under load and after stopping the load generator.
+
+## 💻 Useful Commands
+
+### Check resource metrics
+
+```bash
 kubectl top nodes
-kubectl top pods -A
+kubectl top pods -n day20-health
+```
 
-Expected Outcome
-Metrics Server is running.
-Node CPU and memory usage are available.
-Pod resource usage can be inspected.
-Resource metrics are available for autoscaling.
-🚀 Task B: Resource-Aware Deployment
+### Inspect Pods
 
-Deployed the php-apache application in the day20-health namespace.
-
-1. Create the Namespace
-kubectl create namespace day20-health
-
-2. Resource Requests and Limits
-Resource	Request	Limit
-CPU	200m	500m
-Memory	64Mi	128Mi
-
-Understanding the configuration:
-
-CPU request: The amount of CPU used as the scheduling baseline and for HPA utilization calculations.
-CPU limit: The maximum CPU capacity the container can consume; exceeding it can cause throttling.
-Memory request: The amount of memory Kubernetes uses when scheduling the Pod.
-Memory limit: The maximum permitted memory usage before the container may be terminated due to an out-of-memory condition.
-3. Health Probe Configuration
-Probe	Endpoint	Configuration	Purpose
-Startup	HTTP GET /	periodSeconds: 2, failureThreshold: 30	Allows the application time to start
-Readiness	HTTP GET /	initialDelaySeconds: 5, periodSeconds: 5	Controls whether the Pod receives traffic
-Liveness	HTTP GET /	initialDelaySeconds: 15, periodSeconds: 10	Detects an unhealthy or stuck container
-Probe Behavior
-Startup Probe: Gives the application time to initialize before the other probes take effect.
-Readiness Probe: Removes an unready Pod from normal Service traffic without restarting its container.
-Liveness Probe: Repeated failures cause the kubelet to restart the container, subject to the Pod's restart policy.
-Verification Commands
-kubectl get deployments,pods,svc -n day20-health
-
-kubectl describe deployment php-apache -n day20-health
-
+```bash
+kubectl get pods -n day20-health
 kubectl describe pods -n day20-health
+```
 
-📊 Task C: Resource Inspection & QoS
+### Monitor HPA
 
-Inspected the Pod's Quality of Service (QoS) class and monitored live resource consumption.
-
-Commands
-kubectl get pods -n day20-health
-
-kubectl describe pod <pod-name> -n day20-health
-
-kubectl top pods -n day20-health
-
-kubectl top pods -n day20-health --containers
-
-Observed QoS Class: Burstable
-
-The application uses the Burstable QoS class because CPU and memory requests are configured, but the requests and limits are not equal for both resources.
-
-Kubernetes QoS Classes
-QoS Class	Description
-Guaranteed	Every container has CPU and memory requests equal to their corresponding limits
-Burstable	At least one container has resource requests or limits configured, but the Pod does not meet Guaranteed criteria
-BestEffort	No containers in the Pod have CPU or memory requests or limits configured
-
-Key takeaway: Resource requests help Kubernetes schedule Pods, while resource limits constrain container resource consumption.
-
-📈 Task D: Horizontal Pod Autoscaler (HPA)
-
-Configured an HPA to automatically adjust the number of php-apache replicas according to CPU utilization.
-
-HPA Configuration
-Setting	Value
-Target Deployment	php-apache
-Namespace	day20-health
-Minimum replicas	1
-Maximum replicas	5
-Target CPU utilization	50%
-Verification Commands
+```bash
 kubectl get hpa -n day20-health
-
 kubectl describe hpa -n day20-health
-
 kubectl get hpa -n day20-health -w
+```
 
+### Watch Pod scaling
 
-Monitor Pod replicas:
+```bash
+kubectl get deployments,pods -n day20-health -w
+```
 
-kubectl get pods -n day20-health -w
+### Check events
 
-How HPA Works
-
-The HPA compares the current average CPU utilization against the configured target and adjusts the desired replica count.
-
-The approximate scaling formula is:
-
-Desired Replicas =
-Current Replicas × (Current CPU Utilization / Target CPU Utilization)
-
-
-For example, if there are 2 replicas, current CPU utilization is 100%, and the target is 50%:
-
-Desired Replicas = 2 × (100 / 50)
-                 = 4 replicas
-
-
-This is an approximation. Kubernetes also applies tolerance, stabilization, scaling policies, and minimum/maximum replica boundaries.
-
-🔥 Task E: Load Testing & Autoscaling
-
-Simulated continuous HTTP traffic against the php-apache Service using a BusyBox load generator.
-
-Start the Load Generator
-kubectl run load-generator \
-  -n day20-health \
-  --image=busybox:1.36 \
-  --restart=Never \
-  -it --rm -- \
-  /bin/sh -c 'while true; do wget -q -O- http://php-apache.day20-health.svc.cluster.local; done'
-
-
-Keep the load generator running while monitoring the HPA and Pods in separate terminals.
-
-Monitor CPU Usage
-kubectl top pods -n day20-health
-
-Monitor HPA
-kubectl get hpa -n day20-health -w
-
-Monitor Scaling Events
-kubectl get pods -n day20-health -w
-
-Observed Results
-
-Scale Up
-
-Generated sustained HTTP traffic.
-Observed CPU utilization increase.
-HPA increased the desired replica count.
-Replicas scaled up from 1 toward the configured maximum of 5, depending on observed load and scaling conditions.
-
-Scale Down
-
-Stopped the load generator.
-Allowed CPU utilization to decrease.
-Observed HPA gradually reduce the replica count toward 1.
-Autoscaling is not instantaneous. Metrics collection intervals, HPA synchronization, stabilization windows, and available cluster capacity can affect the timing and final replica count.
-🩺 Task F: Readiness Probe Failure & Recovery
-
-Tested the application's readiness behavior by temporarily changing the readiness probe endpoint to a nonexistent path.
-
-Test Procedure
-Modified the readiness probe to use an invalid HTTP path.
-Observed the Pod become NotReady (0/1).
-Verified that the unready Pod was removed from the Service's ready endpoints.
-Confirmed that the readiness failure did not itself restart the container.
-Restored the readiness path to /.
-Verified that the Pod returned to 1/1 Running and became ready again.
-Useful Commands
-kubectl get pods -n day20-health -w
-
-kubectl describe pod <pod-name> -n day20-health
-
-kubectl get endpoints php-apache -n day20-health
-
+```bash
 kubectl get events -n day20-health --sort-by=.metadata.creationTimestamp
+```
 
-Key Learning
+## 📸 Screenshots & Practical Evidence
 
-A readiness failure affects traffic routing, whereas repeated liveness failures trigger container restarts.
+The following screenshots should be stored in the `evidence/` directory.
 
-Important: A Pod can remain in the Running phase while showing 0/1 readiness. Running and Ready represent different conditions.
+### 1. Metrics Server Verification
 
-📸 Evidence & Screenshots
+![Metrics Server](evidence/01-metrics-server-top-nodes.png)
 
-All screenshots are organized in the evidence/ directory.
+### 2. Deployment Resources and Health Probes
 
-Screenshot	Evidence
-01-metrics-server-top-nodes.png	Metrics Server and node metrics verification
-02-deployment-describe-probes-resources.png	Deployment resources and health probes
-03-qos-burstable-top-pods.png	Burstable QoS and live Pod metrics
-04-hpa-created-target-50.png	HPA configured with a 50% CPU target
-04b-troubleshoot-liveness-timeout.png	Liveness probe troubleshooting
-04c-pod-stable-after-fix.png	Pod stability after fixing the probe issue
-05-hpa-scaling-up.png	HPA scaling-up behavior
-06-pods-scaled-up.png	Increased Pod replica count
-7-hpa-scaling-down.png	HPA scaling-down behavior
-08-readiness-fail-notready.png	Pod becoming NotReady after readiness failure
-09-readiness-fail-events.png	Events recorded during readiness failure
-10-readiness-restored.png	Successful readiness recovery
+![Resources and Probes](evidence/02-deployment-describe-probes-resources.png)
 
-To display a screenshot in the README, use the following Markdown syntax:
+### 3. QoS and Pod Resource Usage
 
-![Metrics Server verification](evidence/01-metrics-server-top-nodes.png)
+![QoS and Resources](evidence/03-qos-burstable-top-pods.png)
 
+### 4. HPA Configuration
 
-For example, to display the autoscaling evidence:
+![HPA Configuration](evidence/04-hpa-created-target-50.png)
 
-![HPA scaling up](evidence/05-hpa-scaling-up.png)
+### 5. Autoscaling Under Load
 
-![Pods scaled up](evidence/06-pods-scaled-up.png)
+![HPA Scaling Up](evidence/05-hpa-scaling-up.png)
 
-![HPA scaling down](evidence/7-hpa-scaling-down.png)
+![Pods Scaled Up](evidence/06-pods-scaled-up.png)
 
+### 6. Autoscaling After Load Stops
 
-GitHub will display these images when the evidence/ folder and the corresponding files are committed to the same repository.
+![HPA Scaling Down](evidence/7-hpa-scaling-down.png)
 
-🔍 Troubleshooting Scenarios
-1. kubectl top Fails
+### 7. Readiness Probe Failure and Recovery
 
-Possible causes:
+![Readiness Failure](evidence/08-readiness-fail-notready.png)
 
-Metrics Server is not running.
-Kubelet TLS verification or network communication is failing.
-Metrics have not been collected yet.
+![Readiness Restored](evidence/10-readiness-restored.png)
 
-Troubleshooting:
+> **Note:** These images require the actual screenshot files to be uploaded to `evidence/` with matching filenames. Update the paths if your filenames differ.
 
-kubectl get pods -n kube-system
-kubectl logs -n kube-system deployment/metrics-server
-kubectl top nodes
-kubectl top pods -n day20-health
+## 🔍 Troubleshooting
 
+| Problem | What to Check |
+|---|---|
+| `kubectl top` fails | Metrics Server status, logs, and metrics availability |
+| HPA shows `<unknown>` | Metrics Server, CPU requests, and collected metrics |
+| Replicas do not increase | CPU usage, load generator, HPA events, and replica limits |
+| Pods keep restarting | Probe configuration, logs, and events |
+| Container is `OOMKilled` | Memory usage and configured memory limits |
 
-Check the Metrics Server arguments and kubelet connectivity in the Kind environment.
+## 🎓 Interview Questions
 
-2. HPA Shows <unknown>
+**1. What is the difference between Readiness and Liveness probes?**
 
-Possible causes:
+Readiness controls traffic eligibility. Liveness detects an unhealthy or stuck container and can trigger a restart.
 
-CPU metrics are unavailable.
-CPU requests are missing.
-Metrics Server has not collected initial data.
+**2. Why does HPA need CPU requests?**
 
-Troubleshooting:
+HPA calculates CPU utilization relative to the requested CPU.
 
-kubectl describe hpa -n day20-health
-kubectl top pods -n day20-health
-kubectl describe deployment php-apache -n day20-health
+**3. What does Metrics Server do?**
 
-3. Replicas Do Not Scale
+It provides CPU and memory metrics used by tools such as `kubectl top` and HPA.
 
-Check the following:
+**4. Does autoscaling guarantee better performance?**
 
-Current CPU utilization versus the configured target.
-CPU requests on the target containers.
-Metrics Server availability.
-Load generator connectivity.
-HPA events and maximum replica count.
-kubectl get hpa -n day20-health
-kubectl describe hpa -n day20-health
-kubectl top pods -n day20-health
-kubectl get pods -n day20-health
+No. Node capacity, database latency, and other bottlenecks can still affect performance.
 
-4. Pod Restart Loops
+## ✅ Key Takeaways
 
-Inspect probe configuration, container logs, and recent events.
+- Application health monitoring using Kubernetes probes.
+- CPU and memory resource management.
+- QoS classification and resource inspection.
+- CPU-based autoscaling with HPA.
+- Load testing and replica monitoring.
+- Readiness failure testing and recovery.
+- Kubernetes troubleshooting fundamentals.
 
-kubectl describe pod <pod-name> -n day20-health
-kubectl logs <pod-name> -n day20-health
-kubectl logs <pod-name> -n day20-health --previous
+## 🏁 Project Status
 
-5. Container Is OOMKilled
+**Day 20 Completed** — Kubernetes Health Probes, Resource Management, QoS, Metrics Server, HPA, Load Testing, and Readiness Recovery.
 
-Memory usage may have exceeded the container's memory limit.
+**Challenge:** DevOps Winter Arc – 90 Days  
+**Environment:** Kubernetes Kind Cluster
 
-kubectl describe pod <pod-name> -n day20-health
-kubectl top pods -n day20-health --containers
-
-
-Review memory requests and limits, application behavior, and recent container termination details.
-
-💡 Interview Questions & Answers
-1. What is the difference between Readiness and Liveness probes?
-
-Answer: Readiness determines whether a Pod should receive Service traffic. Liveness detects a container that is unhealthy or stuck and can trigger a restart after repeated failures.
-
-2. Why do we use a Startup Probe?
-
-Answer: A Startup Probe gives a slow-starting application enough time to initialize before liveness and readiness checks begin taking effect.
-
-3. What happens when a Readiness Probe fails?
-
-Answer: The Pod becomes unready and is excluded from the Service's ready endpoints. A readiness failure alone does not restart the container.
-
-4. What happens when a Liveness Probe repeatedly fails?
-
-Answer: The kubelet restarts the affected container after the configured failure threshold is reached, subject to the Pod's restart policy.
-
-5. What is the difference between CPU requests and limits?
-
-Answer: Requests influence scheduling and provide the baseline for CPU utilization calculations used by HPA. Limits constrain CPU consumption and may cause throttling when exceeded.
-
-6. What can happen when a container exceeds its memory limit?
-
-Answer: The container may be terminated due to an out-of-memory condition, commonly reported as OOMKilled.
-
-7. Why does HPA need CPU requests?
-
-Answer: CPU utilization is calculated relative to requested CPU. Without the relevant CPU requests, HPA may be unable to calculate utilization for the affected containers.
-
-8. What is the difference between HPA and manual scaling?
-
-Answer: Manual scaling sets the replica count directly. HPA automatically adjusts the replica count based on configured metrics and scaling boundaries.
-
-9. What does Metrics Server do?
-
-Answer: Metrics Server collects resource usage metrics from kubelets and exposes them through the Kubernetes resource metrics API for tools such as kubectl top and HPA.
-
-10. Explain Kubernetes QoS classes.
-
-Answer:
-
-Guaranteed: Every container has CPU and memory requests equal to their respective limits.
-Burstable: The Pod has configured resource requests or limits but does not qualify as Guaranteed.
-BestEffort: No container has CPU or memory requests or limits configured.
-11. If CPU utilization is 100%, the target is 50%, and there are 2 replicas, what is the approximate desired replica count?
-
-Answer:
-
-Desired Replicas = 2 × (100 / 50) = 4
-
-
-The final count depends on HPA policies, stabilization, tolerance, and replica boundaries.
-
-12. Why might HPA fail to scale an application that feels slow?
-
-Answer: The bottleneck may be I/O, memory, database latency, or another dependency rather than CPU. Missing metrics, missing requests, scaling policies, or an already-reached replica limit can also prevent additional scaling.
-
-13. Should a Liveness Probe fail when a database is temporarily unavailable?
-
-Answer: Usually not. External dependency failures should generally affect readiness rather than liveness. Otherwise, restarting healthy application containers can create cascading failures.
-
-14. Does autoscaling guarantee better application performance?
-
-Answer: No. Autoscaling can add replicas, but performance may still be limited by node capacity, database bottlenecks, network latency, or application-level problems.
-
-15. What is the difference between a Running Pod and a Ready Pod?
-
-Answer: Running describes the Pod's lifecycle phase. Ready indicates whether the Pod is considered ready to serve traffic. A Pod can be Running but NotReady.
-
-🧠 Key Takeaways
-Metrics Server provides resource metrics for monitoring and autoscaling.
-Resource requests and limits help manage CPU and memory consumption.
-Startup, Readiness, and Liveness probes serve different purposes.
-Readiness failures stop normal traffic routing without inherently restarting containers.
-Liveness failures can cause container restarts.
-Burstable QoS applies when the Pod has configured resources but does not satisfy Guaranteed criteria.
-HPA automatically adjusts replicas according to resource metrics and scaling policies.
-CPU requests are essential for CPU utilization-based autoscaling.
-Load testing helps validate scale-up and scale-down behavior.
-Proper troubleshooting requires checking metrics, events, logs, probes, and HPA status.
-✅ Day 20 Status
-
-Completed: Metrics Server verification, resource-aware deployment, health probes, QoS inspection, HPA configuration, load testing, autoscaling observation, and readiness failure recovery.
-
-Environment: Kubernetes Kind cluster
-
-Namespace: day20-health
-
-Application: php-apache
-
-Autoscaling Range: 1–5 Pods
-
-CPU Utilization Target: 50%
-
-🚀 Next Steps
-Explore custom and external metrics for autoscaling.
-Practice Pod Disruption Budgets (PDBs).
-Learn cluster autoscaling concepts and node capacity planning.
-Integrate application monitoring with Prometheus and Grafana.
-Test resource behavior under different CPU and memory workloads.
+#DevOps #Kubernetes #CloudComputing #HPA #DevOpsWinterArc 
