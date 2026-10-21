@@ -1,26 +1,31 @@
 # Day 20: Health Probes, Resources & Autoscaling (HPA)
 
-## 📌 Overview
-Configured health probes (Startup, Readiness, Liveness), set CPU/memory requests and limits, inspected QoS classes, deployed Kubernetes Metrics Server, and verified auto-scaling using Horizontal Pod Autoscaler (HPA).
+## 📌 Mission
+Make an application self-checking, resource-aware, and able to scale from 1 to 5 Pods under CPU load[cite: 1].
 
 ---
 
-## 🛠️ Key Implementations
-- **Probes**: Configured `startupProbe`, `readinessProbe`, and `livenessProbe` for graceful container lifecycle handling.
-- **Resource Management**: Defined requests (`cpu: 200m`, `memory: 64Mi`) and limits (`cpu: 500m`, `memory: 128Mi`), establishing a **Burstable** QoS class.
-- **Metrics Server**: Configured metrics-server to allow resource tracking via `kubectl top`.
-- **HPA**: Configured scaling between 1 and 5 replicas targeting 50% CPU utilization.
-- **Safe Failure Testing**: Tested readiness probe failure and verified traffic removal without unwanted restarts.
+## 🛠️ Tasks Breakdown
 
----
+### Task A: Metrics Server Verification
+- Installed metrics-server with `--kubelet-insecure-tls` for local kind cluster[cite: 1].
+- Verified metrics availability using `kubectl top nodes` and `kubectl top pods`[cite: 1].
 
-## 📸 Evidence
-Screenshots and verification outputs are saved in the `evidence/` directory.
+### Task B: Resource-Aware Deployment
+- Deployed `php-apache` in namespace `day20-health`[cite: 1].
+- Configured:
+  - **Requests:** CPU: `200m`, Memory: `64Mi`[cite: 1]
+  - **Limits:** CPU: `500m`, Memory: `128Mi`[cite: 1]
+  - **Startup Probe:** HTTP GET `/` (failureThreshold: 30, periodSeconds: 2)[cite: 1]
+  - **Readiness Probe:** HTTP GET `/` (initialDelaySeconds: 5, periodSeconds: 5)[cite: 1, 2]
+  - **Liveness Probe:** HTTP GET `/` (initialDelaySeconds: 15, periodSeconds: 10)[cite: 2]
 
----
+### Task C: Resource Inspection & QoS
+- Inspected QoS class: **Burstable** (requests and limits are defined, but not equal).
+- Monitored live container resource usage with `kubectl top pods -n day20-health`.
 
-## 💡 Interview Q&A
-- **Readiness vs Liveness**: Readiness determines traffic eligibility without restarting; Liveness detects stuck containers and restarts them.
-- **Startup Probe**: Gives slow-starting applications time to initialize before readiness/liveness checks take over.
-- **QoS Classes**: Guaranteed (requests == limits for all containers), Burstable (some requests/limits set), BestEffort (no limits or requests).
-- **HPA Dependency**: Requires CPU requests to calculate utilization percentages accurately.
+### Task D & E: Horizontal Pod Autoscaler (HPA) & Load Testing
+- Configured HPA targeting 50% CPU utilization (`min: 1`, `max: 5`)[cite: 3].
+- Simulated traffic using a busybox load generator[cite: 3]:
+  ```bash
+  kubectl run load-generator -n day20-health --image=busybox:1.36 --restart=Never -it --rm -- /bin/sh -c "while true; do wget -q -O- [http://php-apache.day20-health.svc.cluster.local](http://php-apache.day20-health.svc.cluster.local); done"
