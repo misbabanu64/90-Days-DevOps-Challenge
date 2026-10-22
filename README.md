@@ -1,50 +1,173 @@
-# 90 Days DevOps Challenge
+# Day 21: Kubernetes Security, RBAC & Troubleshooting
 
-My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Docker Compose and Container Security. Every day has its own folder with commands, evidence (screenshots/reports) and a README explaining what I did and learned.
+**DevOps Winter Arc | Day 21/90**
 
-**Status:** Day 15 of 90 completed 🚀
+## Overview
 
-## Progress
+This practical lab focuses on Kubernetes security, Role-Based Access Control (RBAC), ServiceAccounts, Pod Security Standards, and troubleshooting broken Deployments using an existing Kind cluster.
 
-| Day | Topic | Folder |
-|-----|-------|--------|
-| 01 | DevOps Winter Arc kickoff | [Day-01](Day-01) |
-| 02 | Linux Fundamentals | [Day-02](Day-02) |
-| 03 | Linux File & Directory Operations | [Day-03](Day-03) |
-| 04 | Networking, SSH & Connectivity | [Day-04](Day-04) |
-| 05 | DNS, HTTP/HTTPS & Nginx | [Day-05-DNS-HTTP-NGINX](Day-05-DNS-HTTP-NGINX) |
-| 06 | Storage, Monitoring & Debugging | [Day-06](Day-06) |
-| 07 | Git Workflows & Nginx Reverse Proxy Debugging | [Day-07](Day-07) |
-| 08 | Docker Fundamentals | [Day-08](Day-08) |
-| 09 | Dockerfile Deep Dive | [Day-09](Day-09) |
-| 10 | Multi-Stage Docker Builds & Non-Root Execution | [Day-10](Day-10) |
-| 11 | Docker Storage & Networking | [Day-11](Day-11) |
-| 12 | Docker Compose: Flask + PostgreSQL + Redis | [Day-12](Day-12) |
-| 13 | Docker Security & Optimization (Trivy) | [Day-13](Day-13) |
-| 14 | Docker in CI/CD (GitHub Actions) | [Day-14](Day-14) |
-| 15 | Kubernetes Fundamentals (Nginx on kind) | [Day-15](Day-15-Kubernetes-Fundamentals) |
-| 16 | Deployments & Rollouts (rolling updates, rollback) | [Day-16](Day-16-Deployments-Rollouts) |
-| 17 | Services & Networking (ClusterIP, DNS, EndpointSlices) | [Day-17](Day-17-Services-Networking) |
-| 18 | Kubernetes ConfigMaps, Secrets & Namespaces | [Day-18](./Day-18-ConfigMaps-Secrets-Namespaces) |
-| 19 | Storage & StatefulSets (PV, PVC, PostgreSQL) | [Day-19](Day-19-Storage-StatefulSets) |
-| 20 | In Progress | Coming Soon |
-## Highlights
+## Objectives
 
-- **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
-- **Day 13:** Reduced an unsafe image from 1.77 GB to 185 MB and HIGH findings from 401 to 44 (CRITICAL 16 to 0) using Trivy, a non-root user, runtime secrets and a hardened `docker run`. Remaining findings are documented, not hidden.
-- **Day 14:** GitHub Actions pipeline lints the Dockerfile (Hadolint), builds the image, runs a smoke test and a Trivy scan (action pinned to `0.35.0`), then pushes an immutable SHA tag to Docker Hub. A paths filter runs it only when Day-14 files or the workflow change.
-- **Day 15:** Deployed Nginx on a local kind Kubernetes cluster using Deployment and NodePort Service YAML manifests, scaled to 3 replicas, verified access with port-forward, and demonstrated self-healing by deleting a Pod.
+- Implement least-privilege access using RBAC.
+- Create a dedicated ServiceAccount and RoleBinding.
+- Verify permissions using `kubectl auth can-i`.
+- Enforce the Restricted Pod Security Standard.
+- Run a hardened Pod as a non-root user.
+- Troubleshoot and repair three broken Deployments.
 
-## Skills I am building
+## Technologies Used
 
-Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS | CI/CD | Kubernetes (upcoming)
+- Kubernetes
+- kubectl
+- Kind
+- YAML
+- Linux Terminal
+- Git and GitHub
 
-## How each day is organised
+## 1. RBAC and ServiceAccount
 
-Each `Day-XX` folder contains the code or configs, an `evidence/` folder with screenshots or reports, and a README with commands, observations and troubleshooting. No real secrets are committed.
+Created a `secure` namespace and a dedicated ServiceAccount named `viewer`.
 
-## Connect
+Configured a Role named `pod-reader` with read-only permissions for Pods and Pod logs, and connected it using a RoleBinding.
 
-LinkedIn: [Misba Banu](https://www.linkedin.com/in/misba-banu-793567257/)
+### Permission Verification
 
-Learning in public, one day at a time. 💪
+```bash
+kubectl auth can-i get pods -n secure \
+  --as=system:serviceaccount:secure:viewer
+
+kubectl auth can-i delete pods -n secure \
+  --as=system:serviceaccount:secure:viewer
+```
+
+**Expected results:**
+- Get Pods: `yes`
+- Delete Pods: `no`
+
+This demonstrates the principle of least privilege.
+
+## 2. Pod Security and Hardening
+
+Applied the Restricted Pod Security Standard to the `secure` namespace.
+
+```bash
+kubectl label namespace secure \
+  pod-security.kubernetes.io/enforce=restricted
+```
+
+Created a hardened Pod using the following security settings:
+
+- `runAsNonRoot: true`
+- `runAsUser: 10001`
+- `allowPrivilegeEscalation: false`
+- `readOnlyRootFilesystem: true`
+- `capabilities.drop: ["ALL"]`
+- `seccompProfile: RuntimeDefault`
+
+These settings reduce unnecessary privileges and improve container security.
+
+### Verification
+
+```bash
+kubectl get pod secure-pod -n secure
+kubectl describe pod secure-pod -n secure
+```
+
+Tested a root-based Pod to verify that the Restricted policy rejects non-compliant workloads.
+
+## 3. Kubernetes Troubleshooting
+
+Created three broken Deployments in the `lab` namespace and investigated their symptoms before applying fixes.
+
+### Troubleshooting Commands
+
+```bash
+kubectl get deployments,pods -n lab
+
+kubectl describe pod <pod-name> -n lab
+
+kubectl logs <pod-name> -n lab --previous
+
+kubectl get events -n lab --sort-by=.lastTimestamp
+```
+
+### Issues Identified and Fixes
+
+| Deployment | Symptom | Root Cause | Fix |
+|---|---|---|---|
+| broken1 | ImagePullBackOff | Invalid image tag | Updated to a valid NGINX image |
+| broken2 | CrashLoopBackOff | Container command exited with code 1 | Changed to a valid long-running command |
+| broken3 | Pending | 64Gi memory request could not fit on the Kind node | Reduced memory request to 64Mi |
+
+### Example Fix Commands
+
+```bash
+kubectl set image deployment/broken1 -n lab nginx=nginx:1.27
+
+kubectl set resources deployment/broken3 -n lab \
+  --requests=memory=64Mi
+```
+
+For `broken2`, updated the container command to keep the process running.
+
+## 4. Debugging Workflow
+
+Followed an evidence-first troubleshooting approach:
+
+1. `kubectl get` — inspect resource status.
+2. `kubectl describe` — review resource details and Events.
+3. `kubectl logs` — inspect application logs.
+4. `kubectl get events` — identify cluster-level issues.
+5. `kubectl exec` — investigate inside a running container when needed.
+
+## 5. Project Structure
+
+```text
+day21-security-debug/
+├── README.md
+├── rbac.yaml
+└── secure-pod.yaml
+```
+
+## 6. Key Learnings
+
+- Implemented namespace-scoped RBAC permissions.
+- Practised ServiceAccount and RoleBinding configuration.
+- Verified allowed and denied actions using `kubectl auth can-i`.
+- Applied container security settings and Restricted Pod Security.
+- Diagnosed image-pull, application-crash, and resource-scheduling failures.
+- Used Kubernetes Events and logs to identify root causes before fixing issues.
+
+## 7. Evidence and Screenshots
+
+Add your actual screenshots below to document the completed practical work.
+
+- RBAC permission checks showing `yes` for reading Pods and `no` for deleting Pods.
+- Restricted Pod Security rejecting a non-compliant root-based Pod.
+- All three repaired Deployments and their Pods reaching the expected healthy state.
+
+## 8. Interview Preparation
+
+**What is RBAC?**  
+RBAC controls who can perform which actions on which resources and within what scope.
+
+**What is the difference between Role and ClusterRole?**  
+A Role is namespace-scoped, while a ClusterRole can apply cluster-wide or be reused across namespaces.
+
+**What is CrashLoopBackOff?**  
+It indicates that a container repeatedly starts and exits. Check its logs, previous logs, and Pod Events.
+
+**Why use a non-root container?**  
+It reduces the potential impact of a compromised or faulty application.
+
+**How do you troubleshoot a Pending Pod?**  
+Describe the Pod and inspect Events for scheduling constraints or insufficient resources.
+
+## Conclusion
+
+Completed hands-on practice in Kubernetes RBAC, least-privilege access, Pod security hardening, and troubleshooting broken Deployments as part of the DevOps Winter Arc 90-Day Challenge.
+
+**Focus:** Secure workloads, investigate evidence, and apply the smallest safe fix.
+
+#DevOps #Kubernetes #RBAC #CloudComputing #DevOpsWinterArc #LearningByDoing
+
