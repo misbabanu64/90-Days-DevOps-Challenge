@@ -27,9 +27,9 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 17 | Services & Networking (ClusterIP, DNS, EndpointSlices) | [Day-17](Day-17-Services-Networking) |
 | 18 | Kubernetes ConfigMaps, Secrets & Namespaces | [Day-18](./Day-18-ConfigMaps-Secrets-Namespaces) |
 | 19 | Storage & StatefulSets (PV, PVC, PostgreSQL) | [Day-19](Day-19-Storage-StatefulSets) |
-| 20 | Health Probes & Resource Management in Kubernetes | Day-20 |
-| 21 | Kubernetes Security, RBAC & Troubleshooting | Day-21 |
-| 22 | AWS Cloud Essentials, Zero-Spend Budget & Root MFA | Day-22 |
+| 20 | Health Probes & Resource Management in Kubernetes | [Day-20](Day-20-Health-Resources-Autosc...) |
+| 21 | Kubernetes Security, RBAC & Troubleshooting | [Day-21](Day-21) |
+| 22 | AWS Cloud Essentials, Zero-Spend Budget & Root MFA | [Day-22](Day-22) |
 | 23 | In Progress | Coming Soon |
 ## Highlights
 
