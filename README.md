@@ -30,7 +30,8 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 20 | Health Probes & Resource Management in Kubernetes | [Day-20](Day-20-Health-Resources-Autosc...) |
 | 21 | Kubernetes Security, RBAC & Troubleshooting | [Day-21](Day-21) |
 | 22 | AWS Cloud Essentials, Zero-Spend Budget & Root MFA | [Day-22](Day-22) |
-| 23 | In Progress | Coming Soon |
+| 23 | AWS IAM (Identity & Access Management) | [Day-23](Day-23-AWS-IAM) |
+| 24 | In Progress | Coming Soon |
 ## Highlights
 
 - **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
