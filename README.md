@@ -1,54 +1,105 @@
-# 90 Days DevOps Challenge
+# Day 21: Kubernetes Security, RBAC & Troubleshooting
 
-My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Docker Compose and Container Security. Every day has its own folder with commands, evidence (screenshots/reports) and a README explaining what I did and learned.
+**DevOps Winter Arc — 90 Days Challenge**
 
-**Status:** Day 15 of 90 completed 🚀
+## Overview
 
-## Progress
+This hands-on project focuses on Kubernetes security, Role-Based Access Control (RBAC), ServiceAccounts, Pod Security Standards, and troubleshooting broken Deployments using an existing Kind cluster.
 
-| Day | Topic | Folder |
-|-----|-------|--------|
-| 01 | DevOps Winter Arc kickoff | [Day-01](Day-01) |
-| 02 | Linux Fundamentals | [Day-02](Day-02) |
-| 03 | Linux File & Directory Operations | [Day-03](Day-03) |
-| 04 | Networking, SSH & Connectivity | [Day-04](Day-04) |
-| 05 | DNS, HTTP/HTTPS & Nginx | [Day-05-DNS-HTTP-NGINX](Day-05-DNS-HTTP-NGINX) |
-| 06 | Storage, Monitoring & Debugging | [Day-06](Day-06) |
-| 07 | Git Workflows & Nginx Reverse Proxy Debugging | [Day-07](Day-07) |
-| 08 | Docker Fundamentals | [Day-08](Day-08) |
-| 09 | Dockerfile Deep Dive | [Day-09](Day-09) |
-| 10 | Multi-Stage Docker Builds & Non-Root Execution | [Day-10](Day-10) |
-| 11 | Docker Storage & Networking | [Day-11](Day-11) |
-| 12 | Docker Compose: Flask + PostgreSQL + Redis | [Day-12](Day-12) |
-| 13 | Docker Security & Optimization (Trivy) | [Day-13](Day-13) |
-| 14 | Docker in CI/CD (GitHub Actions) | [Day-14](Day-14) |
-| 15 | Kubernetes Fundamentals (Nginx on kind) | [Day-15](Day-15-Kubernetes-Fundamentals) |
-| 16 | Deployments & Rollouts (rolling updates, rollback) | [Day-16](Day-16-Deployments-Rollouts) |
-| 17 | Services & Networking (ClusterIP, DNS, EndpointSlices) | [Day-17](Day-17-Services-Networking) |
-| 18 | Kubernetes ConfigMaps, Secrets & Namespaces | [Day-18](./Day-18-ConfigMaps-Secrets-Namespaces) |
-| 19 | Storage & StatefulSets (PV, PVC, PostgreSQL) | [Day-19](Day-19-Storage-StatefulSets) |
-| 20 | Health Probes & Resource Management in Kubernetes | [Day-20](Day-20-Health-Resources-Autosc...) |
-| 21 | Kubernetes Security, RBAC & Troubleshooting | [Day-21](Day-21) |
-| 22 | AWS Cloud Essentials, Zero-Spend Budget & Root MFA | [Day-22](Day-22) |
-| 23 | AWS IAM (Identity & Access Management) | [Day-23](Day-23-AWS-IAM) |
-| 24 | In Progress | Coming Soon |
-## Highlights
+## Objectives
 
-- **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
-- **Day 13:** Reduced an unsafe image from 1.77 GB to 185 MB and HIGH findings from 401 to 44 (CRITICAL 16 to 0) using Trivy, a non-root user, runtime secrets and a hardened `docker run`. Remaining findings are documented, not hidden.
-- **Day 14:** GitHub Actions pipeline lints the Dockerfile (Hadolint), builds the image, runs a smoke test and a Trivy scan (action pinned to `0.35.0`), then pushes an immutable SHA tag to Docker Hub. A paths filter runs it only when Day-14 files or the workflow change.
-- **Day 15:** Deployed Nginx on a local kind Kubernetes cluster using Deployment and NodePort Service YAML manifests, scaled to 3 replicas, verified access with port-forward, and demonstrated self-healing by deleting a Pod.
+- Implement least-privilege access using RBAC.
+- Verify permissions using `kubectl auth can-i`.
+- Enforce Restricted Pod Security Standards.
+- Configure secure, non-root Pods.
+- Troubleshoot and fix three broken Deployments.
 
-## Skills I am building
+## 1. RBAC and ServiceAccount
 
-Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS | CI/CD | Kubernetes (upcoming)
+- Created a dedicated `viewer` ServiceAccount in the `secure` namespace.
+- Configured a Role and RoleBinding for read-only Pod access.
+- Verified allowed and denied actions using `kubectl auth can-i`.
+- Confirmed that reading Pods is allowed while deleting Pods is denied.
 
-## How each day is organised
+## 2. Pod Security and Hardening
 
-Each `Day-XX` folder contains the code or configs, an `evidence/` folder with screenshots or reports, and a README with commands, observations and troubleshooting. No real secrets are committed.
+Configured the Restricted Pod Security Standard for the `secure` namespace.
 
-## Connect
+Security settings included:
 
-LinkedIn: [Misba Banu](https://www.linkedin.com/in/misba-banu-793567257/)
+- `runAsNonRoot: true`
+- `runAsUser: 10001`
+- `allowPrivilegeEscalation: false`
+- `readOnlyRootFilesystem: true`
+- `capabilities.drop: ["ALL"]`
+- `seccompProfile: RuntimeDefault`
 
-Learning in public, one day at a time. 💪
+Tested the policy by attempting to create a root-based Pod.
+
+## 3. Deployment Troubleshooting
+
+| Deployment | Issue | Root Cause | Resolution |
+|---|---|---|---|
+| `broken1` | ImagePullBackOff | Invalid image tag | Updated to a valid image |
+| `broken2` | CrashLoopBackOff | Container command exited with code 1 | Updated to a long-running command |
+| `broken3` | Pending | Excessive memory request of 64Gi | Reduced memory request |
+
+## 4. Evidence and Screenshots
+
+### RBAC Permission Verification
+
+Verified that the `viewer` ServiceAccount can read Pods but cannot delete them.
+
+![RBAC authorization check](eviden/1-rbac-auth-check.png)
+
+### Restricted Pod Security
+
+Screenshot showing the root-based Pod rejection under the Restricted Pod Security policy.
+
+![Pod security rejection](eviden/2-pod-security-rejected.png)
+
+### All Pods Running
+
+Screenshot showing the repaired Deployments and their Pods running successfully.
+
+![All Pods Running](eviden/3-all-pods-running.png)
+
+## 5. Troubleshooting Commands
+
+```bash
+kubectl get deployments,pods -n lab
+kubectl describe pod <pod-name> -n lab
+kubectl logs <pod-name> -n lab --previous
+kubectl get events -n lab --sort-by=.lastTimestamp
+```
+
+Verify RBAC permissions:
+
+```bash
+kubectl auth can-i get pods -n secure \
+  --as=system:serviceaccount:secure:viewer
+
+kubectl auth can-i delete pods -n secure \
+  --as=system:serviceaccount:secure:viewer
+```
+
+**Debugging workflow:** `get → describe → logs → events → exec`
+
+## Key Learnings
+
+- Kubernetes RBAC and least-privilege security
+- ServiceAccounts, Roles, and RoleBindings
+- Pod Security Standards and securityContext
+- Deployment troubleshooting and recovery
+- Reading Kubernetes Events and container logs
+- Verifying permissions and application status
+
+## Technologies Used
+
+Kubernetes | Kind | kubectl | YAML | Linux | Git | GitHub
+
+---
+
+**Challenge:** DevOps Winter Arc — Day 21 of 90  
+**Focus:** Kubernetes Security, RBAC & Troubleshooting
+
