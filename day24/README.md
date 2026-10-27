@@ -1,4 +1,4 @@
-# Day 24 / 90 — AWS Week Day 2: S3 + CloudFront
+# Day-24 / 90 — AWS Week Day 2: S3 + CloudFront
 
 **Focus:** S3 · Private bucket · Versioning · CloudFront · HTTPS · Caching  
 **Level:** Beginner-friendly  
