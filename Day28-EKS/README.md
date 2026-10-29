@@ -151,3 +151,6 @@ Creates AWS load balancers (ALB/NLB) from Kubernetes Ingress/Service resources.
 
 ### 3. Cleanup proof
 ![Cleanup](screenshots/3-cleanup.png)
+
+### 4. Cluster stack CREATE_COMPLETE
+![Cluster create complete](screenshots/4-create-complete.png)
