@@ -42,7 +42,7 @@ The objective was to understand how to build a highly available and fault-tolera
 ![Steps](screenshots/0-steps.png)
 
 ### 2. Healthy Targets
-![Healthy Targets](screenshots/1-health_targets.png)
+![Healthy Targets](screenshots/1-health%20targets.png)
 
 ### 3. ALB Traffic Testing
 ![ALB Requests](screenshots/2-repeated%20ALB%20requests%20with%20different%20instance%20IDs.PNG)
