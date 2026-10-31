@@ -1,0 +1,12 @@
+{
+  "name": "winter-arc-integration-app",
+  "version": "1.0.0",
+  "description": "Integration project app for DevOps Winter Arc Revision Week",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
