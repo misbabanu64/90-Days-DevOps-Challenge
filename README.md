@@ -34,21 +34,19 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 24 | AWS S3 Static Website Hosting & CloudFront | [Day-24](./Day-24-AWS-S3) |
 | 25 | AWS EC2 Linux Web Server & Security Groups | [Day-25](./Day-25) |
 | 26 | AWS RDS PostgreSQL & VPC Subnet Groups | [Day-26](./Day-26-AWS-RDS) |
-| 27 | In Progress | Coming Soon |
-## Highlights
-
-- **Day 12:** One `compose.yaml` runs Flask + PostgreSQL + Redis with health checks, `service_healthy` dependencies, a named volume and restart policy.
-- **Day 13:** Reduced an unsafe image from 1.77 GB to 185 MB and HIGH findings from 401 to 44 (CRITICAL 16 to 0) using Trivy, a non-root user, runtime secrets and a hardened `docker run`. Remaining findings are documented, not hidden.
-- **Day 14:** GitHub Actions pipeline lints the Dockerfile (Hadolint), builds the image, runs a smoke test and a Trivy scan (action pinned to `0.35.0`), then pushes an immutable SHA tag to Docker Hub. A paths filter runs it only when Day-14 files or the workflow change.
-- **Day 15:** Deployed Nginx on a local kind Kubernetes cluster using Deployment and NodePort Service YAML manifests, scaled to 3 replicas, verified access with port-forward, and demonstrated self-healing by deleting a Pod.
+| 27 | AWS VPC Architecture, Subnets & Route Tables | [Day-27](./Day-27-VPC) |
+| 28 | Amazon EKS Cluster Creation & Management | [Day-28](./Day-28-EKS) |
+| 29 | Target Groups & ALB Healthy Targets Configuration | [Day-29](./Day-29) |
+| 30 | Winter Arc Integration Project: End-to-End Cloud & DevOps | [Day-30](./Day-30/winter-arc-integration-project) |
+| 31 | In Progress | Coming Soon |
 
 ## Skills I am building
 
-Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS | CI/CD | Kubernetes (upcoming)
+Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS (VPC, IAM, S3, RDS, EKS, ALB) | CI/CD | Kubernetes
 
 ## How each day is organised
 
-Each `Day-XX` folder contains the code or configs, an `evidence/` folder with screenshots or reports, and a README with commands, observations and troubleshooting. No real secrets are committed.
+Each `Day-XX` folder contains the code or configs, an `evidence/` folder with screenshots or reports, and a README with commands, observations and troubleshooting. 
 
 ## Connect
 
