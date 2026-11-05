@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage"
+      ],
+      "Resource": "arn:aws:ecr:REGION:ACCOUNT_ID:repository/day35-app"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "autoscaling:StartInstanceRefresh",
+      "Resource": "arn:aws:autoscaling:REGION:ACCOUNT_ID:autoScalingGroup:*:autoScalingGroupName/day35-asg"
+    }
+  ]
+}
