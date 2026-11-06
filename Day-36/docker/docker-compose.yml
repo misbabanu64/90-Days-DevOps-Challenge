@@ -1,0 +1,9 @@
+services:
+  app:
+    image: winter-arc-app:v1
+    container_name: winter-arc-compose
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    restart: unless-stopped
