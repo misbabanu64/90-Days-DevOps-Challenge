@@ -38,7 +38,14 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 28 | Amazon EKS Cluster Creation & Management | [Day-28](./Day-28-EKS) |
 | 29 | Target Groups & ALB Healthy Targets Configuration | [Day-29](./Day-29) |
 | 30 | Winter Arc Integration Project: End-to-End Cloud & DevOps | [Day-30](./Day-30/winter-arc-integration-project) |
-| 31 | In Progress | Coming Soon |
+| 31 | Project Week: Nginx Reverse Proxy Setup & Config Validation | [Day-31](./Day-31) |
+| 32 | Project Week: Node.js Multi-Stage Dockerfile & Containerization | [Day-32](./Day-32) |
+| 33 | Project Week: Multi-Container Orchestration with Docker Compose | [Day-33](./Day-33) |
+| 34 | Project Week: Kubernetes Pods, Deployments & Service Discovery | [Day-34](./Day-34) |
+| 35 | Project Week: Ingress Controller & Routing to Microservices | [Day-35](./Day-35) |
+| 36 | Project Week: End-to-End Testing, Resilience & Teardown | [Day-36](./Day-36) |
+| 37 | AWS EKS Architecture, Multi-AZ Subnets & Cluster Setup Plan | [Day-37](./Day-37) |
+| 38 | In Progress | Coming Soon |
 
 ## Skills I am building
 
