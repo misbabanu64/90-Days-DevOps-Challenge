@@ -1,0 +1,50 @@
+========================================================================================
+AWS EKS CLUSTER ARCHITECTURE & SHARED RESPONSIBILITY MODEL (DAY 37)
+========================================================================================
+
+Region: ap-southeast-2 (Sydney)
+VPC CIDR: 10.0.0.0/16
+
++--------------------------------------------------------------------------------------+
+| [AWS-MANAGED RESPONSIBILITY]                                                         |
+| EKS Control Plane (Across 3 Availability Zones)                                      |
+|  +--------------------------------------------------------------------------------+  |
+|  | [ Kubernetes API Server ] <----+ (kubectl admin traffic over HTTPS)            |  |
+|  | [ etcd Database ] (Encrypted)  |                                                |  |
+|  | [ Controller Manager ]         |                                                |  |
+|  | [ Kube-Scheduler ]             |                                                |  |
+|  +--------------------------------+-----------------------------------------------+  |
++-----------------------------------|--------------------------------------------------+
+                                    | ENI / Cross-VPC Secure Communication
++-----------------------------------|--------------------------------------------------+
+| [CUSTOMER-MANAGED RESPONSIBILITY] v                                                  |
+| Customer VPC (10.0.0.0/16)                                                           |
+|                                                                                      |
+|  +------------------------------------+    +--------------------------------------+  |
+|  | Availability Zone A (ap-southeast-2a)   | Availability Zone B (ap-southeast-2b)   |  |
+|  |                                    |    |                                      |  |
+|  |  [PUBLIC SUBNET A: 10.0.1.0/24]   |    |  [PUBLIC SUBNET B: 10.0.2.0/24]     |  |
+|  |  +-------------------------------+ |    |  +---------------------------------+ |  |
+|  |  | Application Load Balancer(ALB)|<=======> Internet Ingress Traffic         | |  |
+|  |  | NAT Gateway A                 | |    |  | NAT Gateway B                   | |  |
+|  |  +-------------------------------+ |    |  +---------------------------------+ |  |
+|  |                  |                 |    |                  |                   |  |
+|  |                  v (Route to App)  |    |                  v (Route to App)    |  |
+|  |  [PRIVATE SUBNET A: 10.0.10.0/24]| |    |  [PRIVATE SUBNET B: 10.0.20.0/24]   |  |
+|  |  +-------------------------------+ |    |  +---------------------------------+ |  |
+|  |  | Managed Node Group (EC2)      | |    |  | Managed Node Group (EC2)        | |  |
+|  |  | Worker Node 1                 | |    |  | Worker Node 2                   | |  |
+|  |  |   -> kubelet, kube-proxy      | |    |  |   -> kubelet, kube-proxy        | |  |
+|  |  |   -> aws-node (VPC CNI)       | |    |  |   -> aws-node (VPC CNI)         | |  |
+|  |  |   -> [K8s Service: NodePort]  | |    |  |   -> [K8s Service: NodePort]    | |  |
+|  |  |        |                      | |    |  |        |                        | |  |
+|  |  |        v                      | |    |  |        v                        | |  |
+|  |  |      [ Pod 1 (App Workload) ] | |    |  |      [ Pod 2 (App Workload) ]   | |  |
+|  |  +-------------------------------+ |    |  +---------------------------------+ |  |
+|  +------------------------------------+    +--------------------------------------+  |
++--------------------------------------------------------------------------------------+
+
+Traffic Path:
+- Ingress: External User -> Internet Gateway -> ALB -> K8s Service -> Application Pod[cite: 1]
+- Management: Admin Workstation -> kubectl -> EKS API Endpoint -> Worker Nodes[cite: 1]
+========================================================================================
