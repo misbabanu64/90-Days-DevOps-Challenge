@@ -72,8 +72,7 @@ kubectl describe pod POD_NAME
 * Labels: `kubernetes.io/arch=amd64`, `kubernetes.io/os=linux`, `node-role.kubernetes.io/control-plane=`
 * Taints: `<none>`, so pods scheduled without tolerations on this single node.
 * Both replicas (100m CPU, 128Mi memory requests each) landed on the same node.
-* *(Add your own observation here.)*
-
+* * Taints none the, isliye pods bina toleration ke schedule ho gaye; dono replicas single node par chali gayi kyunki cluster me ek hi node hai.
 ### Pod scaling vs node group scaling
 * **Replica scaling:** changes the number of Pods inside existing capacity; takes seconds.
 * **Node group scaling:** changes EC2 worker count (via ASG / Cluster Autoscaler / Karpenter); takes minutes.
@@ -103,6 +102,7 @@ Warning  FailedScheduling  12s  default-scheduler  0/1 nodes are available: 1 In
 * If a real node group is created: EC2 + EBS charges apply, EKS control plane is billed separately, and NAT Gateway/public IPv4/data transfer add more. Get budget approval first.
 * Cleanup: delete the node group, then check for leftover resources (ENIs, EBS volumes, NAT Gateway, load balancers).
 * Local cleanup:
+* * Result: test workload deleted; `kubectl get pods` shows "No resources found".
 ```bash
 kubectl delete -f node-capacity-demo.yaml
 kubectl get pods
