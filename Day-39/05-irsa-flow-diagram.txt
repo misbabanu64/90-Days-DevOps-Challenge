@@ -1,0 +1,25 @@
+========================================================================================
+                   AWS EKS: IAM, CLUSTER ACCESS & IRSA ARCHITECTURE
+========================================================================================
+
+1. ENGINEER ACCESS (Kubernetes RBAC):
+   [ Engineer IAM User ] ──▶ [ EKS Cluster API ] ──▶ [ Role: pod-reader ]
+                                                             │
+                                                             ▼
+                                             Allowed: get, list, watch pods (dev namespace)
+
+2. APPLICATION ACCESS (IRSA Flow):
+   [ Pod (dev namespace) ]
+              │
+              ▼
+   [ ServiceAccount: app-s3-reader-sa ]
+              │
+              ▼ (Projected OIDC Token)
+   [ AWS STS: AssumeRoleWithWebIdentity ]
+              │
+              ▼ (Trust Policy verified by EKS OIDC Provider)
+   [ IAM Role: AppS3ReadOnlyRole ]
+              │
+              ▼ (Temporary Scoped AWS Credentials)
+   [ Amazon S3: Only 'my-app-test-bucket' Read-Only (s3:GetObject, s3:ListBucket) ]
+========================================================================================
