@@ -45,7 +45,10 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 35 | Project Week: Ingress Controller & Routing to Microservices | [Day-35](./Day-35) |
 | 36 | Project Week: End-to-End Testing, Resilience & Teardown | [Day-36](./Day-36) |
 | 37 | AWS EKS Architecture, Multi-AZ Subnets & Cluster Setup Plan | [Day-37](./Day-37) |
-| 38 | In Progress | Coming Soon |
+| 38 | Amazon EKS Managed Node Groups & Worker Node Configuration | [Day-38](./Day-38) |
+| 39 | Kubernetes RBAC & IAM Roles for Service Accounts (IRSA) | [Day-39](./Day-39) |
+| 40 | Deploying Microservices on EKS, Service Discovery & Ingress | [Day-40](./Day-40) |
+| 41 | In Progress | Coming Soon |
 
 ## Skills I am building
 
