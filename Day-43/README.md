@@ -46,7 +46,7 @@
 
 ## 2. Architecture
 
-![Day 43 Architecture](day43-architecture.svg)
+![Day 43 Architecture](Screenshots/architecture-diagram.png)
 
 **How the flow works**
 
@@ -62,7 +62,6 @@
 ```
 Day-43/
 ├── README.md
-├── day43-architecture.svg
 ├── day43-web-deployment.yaml
 ├── day43-web-service.yaml
 └── Screenshots/
@@ -70,7 +69,8 @@ Day-43/
     ├── 02-deployment-pods-ready.png
     ├── 03-service-endpoints.png
     ├── 04-internal-http-test.png
-    └── 05-pod-replacement.png
+    ├── 05-pod-replacement.png
+    └── architecture-diagram.png
 ```
 
 ---
