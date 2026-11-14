@@ -48,7 +48,11 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 38 | Amazon EKS Managed Node Groups & Worker Node Configuration | [Day-38](./Day-38) |
 | 39 | Kubernetes RBAC & IAM Roles for Service Accounts (IRSA) | [Day-39](./Day-39) |
 | 40 | Deploying Microservices on EKS, Service Discovery & Ingress | [Day-40](./Day-40) |
-| 41 | In Progress | Coming Soon |
+| 41 | Kubernetes Persistent Volumes (EBS CSI Driver) & StatefulSets | [Day-41](./Day-41) |
+| 42 | Helm Charts & Package Management on Amazon EKS | [Day-42](./Day-42) |
+| 43 | Cluster Observability: Prometheus & Grafana Monitoring on EKS | [Day-43](./Day-43) |
+| 44 | EKS Horizontal Pod Autoscaler (HPA) & Cluster Teardown | [Day-44](./Day-44) |
+| 45 | In Progress | Coming Soon |
 
 ## Skills I am building
 
