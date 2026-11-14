@@ -45,13 +45,13 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 35 | Project Week: Ingress Controller & Routing to Microservices | [Day-35](./Day-35) |
 | 36 | Project Week: End-to-End Testing, Resilience & Teardown | [Day-36](./Day-36) |
 | 37 | AWS EKS Architecture, Multi-AZ Subnets & Cluster Setup Plan | [Day-37](./Day-37) |
-| 38 | Amazon EKS Managed Node Groups & Worker Node Configuration | [Day-38](./Day-38) |
-| 39 | Kubernetes RBAC & IAM Roles for Service Accounts (IRSA) | [Day-39](./Day-39) |
-| 40 | Deploying Microservices on EKS, Service Discovery & Ingress | [Day-40](./Day-40) |
-| 41 | Kubernetes Persistent Volumes (EBS CSI Driver) & StatefulSets | [Day-41](./Day-41) |
-| 42 | Helm Charts & Package Management on Amazon EKS | [Day-42](./Day-42) |
-| 43 | Cluster Observability: Prometheus & Grafana Monitoring on EKS | [Day-43](./Day-43) |
-| 44 | EKS Horizontal Pod Autoscaler (HPA) & Cluster Teardown | [Day-44](./Day-44) |
+| 38 | AWS EKS Managed Node Groups & Capacity Planning | [Day-38](./Day-38) |
+| 39 | AWS EKS: IAM, Cluster Access & IRSA | [Day-39](./Day-39) |
+| 40 | AWS EKS: AWS Load Balancer Controller | [Day-40](./Day-40) |
+| 41 | AWS EKS EBS & EFS Storage | [Day-41](./Day-41) |
+| 42 | AWS EKS Autoscaling | [Day-42](./Day-42) |
+| 43 | Deploy an Application on AWS EKS | [Day-43](./Day-43) |
+| 44 | Kubernetes Production Ingress & Traffic Management | [Day-44](./Day-44) |
 | 45 | In Progress | Coming Soon |
 
 ## Skills I am building
