@@ -52,7 +52,8 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 42 | AWS EKS Autoscaling | [Day-42](./Day-42) |
 | 43 | Deploy an Application on AWS EKS | [Day-43](./Day-43) |
 | 44 | Kubernetes Production Ingress & Traffic Management | [Day-44](./Day-44) |
-| 45 | In Progress | Coming Soon |
+| 45 | Kubernetes Production: HPA & Advanced Autoscaling | [Day-45](./Day-45) |
+| 46 | In Progress | Coming Soon |
 
 ## Skills I am building
 
