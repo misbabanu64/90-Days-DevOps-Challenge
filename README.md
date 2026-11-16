@@ -53,7 +53,7 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 43 | Deploy an Application on AWS EKS | [Day-43](./Day-43) |
 | 44 | Kubernetes Production Ingress & Traffic Management | [Day-44](./Day-44) |
 | 45 | Kubernetes Production: HPA & Advanced Autoscaling | [Day-45](./Day-45) |
-| 46 | In Progress | Coming Soon |
+| 46 | Kubernetes Production: StatefulSets & DaemonSets | [Day-46](./Day-46) |
 
 ## Skills I am building
 
