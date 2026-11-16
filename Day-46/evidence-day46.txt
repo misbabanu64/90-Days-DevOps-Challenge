@@ -1,0 +1,9 @@
+NAME                            READY   AGE   CONTAINERS   IMAGES
+statefulset.apps/web-stateful   2/2     37m   nginx        nginx:1.27
+
+NAME                   TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/web-headless   ClusterIP   None         <none>        80/TCP    37m   app=web-stateful
+
+NAME                 READY   STATUS    RESTARTS   AGE   IP           NODE                  NOMINATED NODE   READINESS GATES
+pod/web-stateful-0   1/1     Running   0          22m   10.244.0.8   day41-control-plane   <none>           <none>
+pod/web-stateful-1   1/1     Running   0          37m   10.244.0.7   day41-control-plane   <none>           <none>
