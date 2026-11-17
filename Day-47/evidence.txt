@@ -1,0 +1,22 @@
+== StorageClass ==
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  6d5h
+
+== PVC and PV ==
+NAME                             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/demo-pvc   Bound    pvc-17979e18-b960-46c9-abef-1372f34726a7   1Gi        RWO            standard       <unset>                 29m
+
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/pvc-17979e18-b960-46c9-abef-1372f34726a7   1Gi        RWO            Delete           Bound    day47-lab/demo-pvc   standard       <unset>                          28m
+
+== PV details ==
+NAME                                       CAPACITY   ACCESS          RECLAIM   SC
+pvc-17979e18-b960-46c9-abef-1372f34726a7   1Gi        ReadWriteOnce   Delete    standard
+
+== Pod mount ==
+    Mounts:
+      /data from app-storage (rw)
+    ClaimName:  demo-pvc
+
+== proof.txt after recreate ==
+Day47-storage-test
