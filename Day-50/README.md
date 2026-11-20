@@ -1,23 +1,49 @@
-# DevOps Winter Arc - Day 50: Kubernetes Production Break-and-Fix Lab
+# Day 50 — Kubernetes Production: Break-and-Fix Lab
 
-## Goal
-Diagnose and repair common Kubernetes production failure modes (`ImagePullBackOff`, `CrashLoopBackOff`, Service selector mismatches, PVC Pending states, and NetworkPolicy CNI behavior) inside an isolated, disposable local namespace (`day50-lab`) using an evidence-based troubleshooting workflow.
+> **DevOps Winter Arc | 90 Days DevOps Challenge**
+> Diagnosing and repairing common Kubernetes failures in a safe, isolated local namespace, with **zero cloud/AWS resources**.
 
----
-
-## Troubleshooting Workflow
-1. **Observe symptom:** Check resource status (`kubectl get all -n day50-lab`).
-2. **Inspect status and events:** Examine Pod/Service descriptions and cluster events (`kubectl describe`, `kubectl get events`).
-3. **Check logs and configuration:** Inspect container logs (`--previous` for crashed containers) and manifest specs.
-4. **Identify root cause:** Pinpoint the exact configuration or runtime failure.
-5. **Make the smallest safe fix:** Apply targeted patches or image/spec updates without disrupting healthy workloads.
-6. **Verify recovery:** Confirm rollout completion, `1/1 Running` Pod states, and populated `EndpointSlices`.
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Kind-326CE5?logo=kubernetes&logoColor=white)
+![Namespace](https://img.shields.io/badge/Namespace-day50--lab-success)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
 ---
 
-## Lab Environment & Safety Setup
-- **Cluster:** Local Kind cluster (`kind-day41`)
-- **Isolated Namespace:** `day50-lab` (Zero cloud/AWS resources created)
+## Table of Contents
+1. [Objective](#1-objective)
+2. [Environment & Safety Setup](#2-environment--safety-setup)
+3. [Troubleshooting Workflow](#3-troubleshooting-workflow)
+4. [Exercise A — ImagePullBackOff](#4-exercise-a--imagepullbackoff)
+5. [Exercise B — CrashLoopBackOff](#5-exercise-b--crashloopbackoff)
+6. [Exercise C — Service Selector Mismatch](#6-exercise-c--service-selector-mismatch)
+7. [Exercise D — PVC Pending Investigation](#7-exercise-d--pvc-pending-investigation)
+8. [Exercise E — NetworkPolicy & CNI Check](#8-exercise-e--networkpolicy--cni-check)
+9. [Root Cause Summary](#9-root-cause-summary)
+10. [Interview Questions & Answers](#10-interview-questions--answers)
+11. [Cleanup](#11-cleanup)
+12. [Completion Checklist](#12-completion-checklist)
+13. [Key Takeaways](#13-key-takeaways)
+
+---
+
+## 1. Objective
+
+- Follow an evidence-based troubleshooting workflow.
+- Fix `ImagePullBackOff` and `CrashLoopBackOff`.
+- Diagnose Service selector problems.
+- Investigate PVC and NetworkPolicy symptoms.
+- Verify every fix and document root causes.
+
+---
+
+## 2. Environment & Safety Setup
+
+| Item | Value |
+|------|-------|
+| Cluster | Kind (`day41-control-plane`) |
+| Context | `kind-day41` |
+| Namespace | `day50-lab` (isolated, disposable) |
+| Cloud/AWS resources | None |
 
 ```bash
 kubectl config current-context
@@ -25,163 +51,227 @@ kubectl create namespace day50-lab
 kubectl config set-context --current --namespace=day50-lab
 ```
 
----
-
-## Deliverables: Break-and-Fix Exercises
-
-### Exercise A: `ImagePullBackOff`
-- **Symptom:** Pod `bad-image-*` remained stuck in `0/1` `ErrImagePull` / `ImagePullBackOff` state.
-- **Diagnostic Commands & Output:**
-  ```bash
-  kubectl create deployment bad-image --image=nginx:tag-does-not-exist -n day50-lab
-  kubectl get pods -n day50-lab
-  kubectl describe pod <pod-name> -n day50-lab
-  ```
-  *Events Output:* `Failed to pull image "nginx:tag-does-not-exist": failed to resolve reference "docker.io/library/nginx:tag-does-not-exist": not found`.
-
-  **Output Screenshot (Before Repair):**
-  ![ImagePullBackOff and Events before repair](./1-imagepullbackoff.png)
-
-- **Root Cause:** The Deployment referenced a non-existent image tag (`nginx:tag-does-not-exist`) that could not be resolved or pulled from Docker Hub.
-- **Fix:** Updated the Deployment container image to a valid existing tag (`nginx:1.27`):
-  ```bash
-  kubectl set image deployment/bad-image *=nginx:1.27 -n day50-lab
-  ```
-- **Verification:**
-  ```bash
-  kubectl rollout status deployment/bad-image -n day50-lab
-  kubectl get pods -n day50-lab
-  ```
-  *Result:* `deployment "bad-image" successfully rolled out` and Pod transitioned to `1/1 Running`.
-- **Prevention Tip:** Always pin verified, immutable image tags (or SHA256 digests) validated in CI pipelines before deploying to Kubernetes.
+**Safety measures:**
+- Verified the context before every destructive command.
+- Changed resources **only** inside `day50-lab`.
+- Never touched `default` or system namespaces.
 
 ---
 
-### Exercise B: `CrashLoopBackOff`
-- **Symptom:** Pod `crash-demo-*` repeatedly terminated with `Error` and entered `CrashLoopBackOff` with increasing restart counts.
-- **Diagnostic Commands & Output:**
-  ```bash
-  kubectl create deployment crash-demo --image=busybox:1.36 -n day50-lab -- /bin/sh -c "exit 1"
-  kubectl get pods -n day50-lab
-  kubectl get events -n day50-lab --sort-by='.lastTimestamp'
-  ```
-  *Events Output:* `Warning BackOff: Back-off restarting failed container busybox in pod crash-demo-*`.
+## 3. Troubleshooting Workflow
 
-  **Output Screenshot (Before Repair):**
-  ![CrashLoopBackOff logs and Events](./2-crashloopbackoff.png)
+1. **Observe** the symptom
+2. **Inspect** status and events
+3. **Check** logs and configuration
+4. **Identify** the root cause
+5. **Apply** the smallest safe fix
+6. **Verify** recovery
 
-- **Root Cause:** The container ran `/bin/sh -c "exit 1"`, exiting immediately with a non-zero status code. Because a Deployment requires a continuously running foreground process, Kubernetes repeatedly restarted the container with exponential backoff.
-- **Fix:** Patched the container's `command` field to run a long-lived foreground process (`sleep 36000`):
-  ```bash
-  kubectl patch deployment crash-demo -n day50-lab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/command", "value": ["sh", "-c", "sleep 36000"]}]'
-  ```
-- **Verification:**
-  ```bash
-  kubectl rollout status deployment/crash-demo -n day50-lab
-  kubectl get pods -n day50-lab
-  ```
-  *Result:* `deployment "crash-demo" successfully rolled out` and Pod remained stable at `1/1 Running` with `0` restarts.
-- **Prevention Tip:** Ensure application containers run a persistent foreground process (PID 1) and validate container entrypoint commands locally prior to deployment.
-
----
-
-### Exercise C: Service Selector Mismatch
-- **Symptom:** Service `web-svc` had no backend endpoints (`ENDPOINTS` showed `<unset>`), preventing traffic routing to `web-demo` Pods.
-- **Diagnostic Commands & Output:**
-  ```bash
-  kubectl create deployment web-demo --image=nginx:1.27 -n day50-lab
-  kubectl expose deployment web-demo --name=web-svc --port=80 --target-port=80 -n day50-lab
-  kubectl patch service web-svc -n day50-lab -p '{"spec":{"selector":{"app":"wrong-app"}}}'
-  kubectl get pods --show-labels -n day50-lab
-  kubectl describe service web-svc -n day50-lab
-  kubectl get endpointslices -n day50-lab
-  ```
-  *Output:* Pod had label `app=web-demo`, whereas `web-svc` selector was `app=wrong-app`, resulting in `<unset>` endpoints in `EndpointSlices`.
-
-  **Output Screenshot (Before Repair):**
-  ![Service selector mismatch and empty EndpointSlices](./3-service-mismatch.png)
-
-- **Root Cause:** The Service's `spec.selector` (`app=wrong-app`) did not match the Pod template labels (`app=web-demo`), so the EndpointSlice controller could not associate any Ready Pods with the Service.
-- **Fix:** Restored the Service selector to match the Pod's `app=web-demo` label:
-  ```bash
-  kubectl patch service web-svc -n day50-lab -p '{"spec":{"selector":{"app":"web-demo"}}}'
-  ```
-- **Verification:**
-  ```bash
-  kubectl get endpointslices -n day50-lab
-  kubectl get deploy,rs,pods,svc -n day50-lab
-  ```
-  *Result:* `EndpointSlices` immediately populated with the `web-demo` Pod IP address, and all workloads were `1/1 Running`.
-
-  **Output Screenshot (After All Fixes & Rollout Verification):**
-  ![Successful rollout and Ready Pods after fixes](./4-verified-fixes.png)
-
-- **Prevention Tip:** Manage Service selectors and Deployment Pod labels from shared variables/templates in Helm or Kustomize so they cannot drift independently.
-
----
-
-### Exercise D: PVC Pending Investigation
-- **Symptom:** PersistentVolumeClaims (PVCs) remain stuck in `Pending` state instead of binding to a PersistentVolume (PV).
-- **Diagnostic Commands & Output:**
-  ```bash
-  kubectl get storageclass
-  kubectl get pv
-  kubectl get pvc -A
-  ```
-  *Output:* Cluster uses `standard (default)` StorageClass (`rancher.io/local-path`) with `WaitForFirstConsumer` binding mode; no PVs or PVCs currently exist.
-- **Root Causes (Two Common Reasons):**
-  1. **No Matching PV or Missing/Broken Dynamic Provisioner:** Either no static PV satisfies the requested storage size/access mode, or the referenced `StorageClass` is missing/misconfigured so dynamic provisioning fails.
-  2. **`WaitForFirstConsumer` Volume Binding Mode:** When a StorageClass uses `WaitForFirstConsumer`, the PVC intentionally stays `Pending` until a Pod using that PVC is scheduled onto a specific node.
-- **Verification & Safety:** Inspected cluster storage state non-destructively without creating cloud disks or altering StorageClasses.
-- **Prevention Tip:** Verify `StorageClass` availability, provisioner controller health, and `volumeBindingMode` expectations before deploying stateful workloads.
-
----
-
-### Exercise E: NetworkPolicy Investigation (Optional)
-- **Symptom:** Applying a `NetworkPolicy` resource succeeds in the Kubernetes API, yet Pod-to-Pod traffic restriction is not enforced.
-- **Diagnostic Commands & Output:**
-  ```bash
-  kubectl get pods -n kube-system
-  ```
-  *Output:* Cluster networking is managed by `kindnet-fbpmx`.
-- **Root Cause:** Kind uses `kindnet` as its default CNI plugin, which handles basic Pod networking/routing but does **not** implement NetworkPolicy enforcement.
-- **Verification:** Confirmed CNI plugin in `kube-system` without applying policies outside `day50-lab`.
-- **Prevention Tip:** Use a NetworkPolicy-capable CNI plugin (such as Calico or Cilium) in clusters where micro-segmentation and ingress/egress policies are required.
-
----
-
-## Root-Cause & Verification Summary
-
-**Output Screenshot (Summary):**
-![Concise root-cause and verification summary](./5-root-cause-summary.png)
-
----
-
-## Interview Questions & Answers
-
-1. **What is the difference between `ImagePullBackOff` and `CrashLoopBackOff`?**
-   - **`ImagePullBackOff`** happens *before* the container starts: the kubelet cannot pull the container image from the registry (due to an invalid image name/tag, missing `imagePullSecrets`, or network/registry auth issues).
-   - **`CrashLoopBackOff`** happens *after* the image is pulled and the container starts: the container process crashes or exits repeatedly, and Kubernetes waits with an exponential backoff delay before restarting it again.
-
-2. **How do you investigate a `Pending` Pod?**
-   - Run `kubectl describe pod <pod-name> -n <namespace>` and check the **Events** section for scheduler messages (e.g., `Insufficient cpu/memory`, node taints/tolerations mismatch, nodeSelector/affinity rules not matching any node, or unbound `Pending` PVCs).
-
-3. **Why can a Service have no endpoints (`<none>` / `<unset>`)?**
-   - Either the Service's `spec.selector` does not match the labels on any Pods in the same namespace, or matching Pods exist but are not in a `Ready` state (e.g., failing readiness probes or crashing).
-
-4. **How do you view logs from a previous crashed container?**
-   - Run `kubectl logs <pod-name> --previous -n <namespace>` (or `-p`), which retrieves stdout/stderr logs from the container instance that crashed prior to the latest restart.
-
-5. **Why should you inspect events before changing resources?**
-   - Cluster events (`kubectl describe` / `kubectl get events`) provide exact, evidence-based reasons from the scheduler, kubelet, and controllers (such as image pull errors, probe failures, or volume mount errors). Checking events first prevents guesswork and avoids making unnecessary or destructive configuration changes.
-
----
-
-## Cleanup & Verification
-Confirmed active context and deleted only the disposable lab namespace:
 ```bash
-kubectl config current-context
+kubectl get all -n day50-lab
+kubectl get pods -o wide -n day50-lab
+kubectl describe pod <pod-name> -n day50-lab
+kubectl get events -n day50-lab
+```
+
+---
+
+## 4. Exercise A — ImagePullBackOff
+
+| | |
+|---|---|
+| **Symptom** | Pod stuck in `ErrImagePull` / `ImagePullBackOff` |
+| **Root cause** | Invalid image tag `nginx:tag-does-not-exist` |
+| **Fix** | Updated the image to `nginx:1.27` |
+| **Verification** | Rollout succeeded, Pod `1/1 Running` |
+| **Prevention** | Pin valid image tags and validate them in CI before deploying |
+
+**Break:**
+```bash
+kubectl create deployment bad-image --image=nginx:tag-does-not-exist -n day50-lab
+kubectl get pods -n day50-lab
+kubectl describe pod <pod-name> -n day50-lab
+```
+
+**Fix & verify:**
+```bash
+kubectl set image deployment/bad-image nginx=nginx:1.27 -n day50-lab
+kubectl rollout status deployment/bad-image -n day50-lab
+kubectl get pods -n day50-lab
+```
+
+📸 **Evidence:**
+
+![ImagePullBackOff](screenshots/1-imagepullbackoff.png)
+
+---
+
+## 5. Exercise B — CrashLoopBackOff
+
+| | |
+|---|---|
+| **Symptom** | Pod restarting repeatedly with increasing back-off |
+| **Root cause** | Container command `/bin/sh -c "exit 1"` terminates immediately with a non-zero exit code |
+| **Fix** | Changed the command to `["sh", "-c", "sleep 36000"]` so the process stays alive |
+| **Verification** | Pod stabilized at `1/1 Running` |
+| **Prevention** | Use proper long-running entrypoints, add liveness/readiness probes, and check `--previous` logs early |
+
+**Break:**
+```bash
+kubectl create deployment crash-demo --image=busybox:1.36 -n day50-lab -- /bin/sh -c "exit 1"
+kubectl get pods -n day50-lab
+kubectl logs deployment/crash-demo -n day50-lab
+kubectl logs <pod> --previous -n day50-lab
+```
+
+**Fix & verify:**
+```bash
+kubectl edit deployment crash-demo -n day50-lab
+# command: ["sh", "-c", "sleep 36000"]
+kubectl rollout status deployment/crash-demo -n day50-lab
+kubectl get pods -n day50-lab
+```
+
+📸 **Evidence:**
+
+![CrashLoopBackOff](screenshots/2-crashloopbackoff.png)
+
+---
+
+## 6. Exercise C — Service Selector Mismatch
+
+| | |
+|---|---|
+| **Symptom** | Service had no backends; EndpointSlices showed `<unset>` |
+| **Root cause** | Service selector `app=wrong-app` did not match the Pod label `app=web-demo` |
+| **Fix** | Patched the Service selector back to `{"app": "web-demo"}` |
+| **Verification** | EndpointSlices populated with the Pod IP; routing restored |
+| **Prevention** | Manage Deployment and Service labels through shared Helm/Kustomize templates |
+
+**Break & diagnose:**
+```bash
+kubectl create deployment web-demo --image=nginx:1.27 -n day50-lab
+kubectl expose deployment web-demo --name=web-svc --port=80 --target-port=80 -n day50-lab
+kubectl patch service web-svc -n day50-lab -p '{"spec":{"selector":{"app":"wrong-app"}}}'
+kubectl get pods --show-labels -n day50-lab
+kubectl describe svc web-svc -n day50-lab
+kubectl get endpointslices -n day50-lab
+```
+
+**Fix & verify:**
+```bash
+kubectl patch service web-svc -n day50-lab -p '{"spec":{"selector":{"app":"web-demo"}}}'
+kubectl get endpointslices -n day50-lab
+```
+
+📸 **Evidence:**
+
+![Service selector mismatch](screenshots/3-service-mismatch.png)
+
+---
+
+## 7. Exercise D — PVC Pending Investigation
+
+```bash
+kubectl get storageclass
+kubectl get pv
+kubectl get pvc -A
+```
+
+**Findings:** The cluster has a default `standard` StorageClass using the `rancher.io/local-path` provisioner with `WaitForFirstConsumer` binding mode. No storage configuration was changed.
+
+**Why a PVC may stay `Pending`:**
+1. **No matching PV**: no PersistentVolume satisfies the requested size, access mode, or StorageClass.
+2. **Missing or broken provisioner**: the StorageClass is absent or its dynamic provisioner is not working.
+3. **WaitForFirstConsumer**: the PVC waits until a Pod that uses it is scheduled.
+
+**Prevention:** Verify that a default StorageClass exists and that its provisioner is healthy before deploying stateful workloads.
+
+---
+
+## 8. Exercise E — NetworkPolicy & CNI Check
+
+Inspected the `kube-system` Pods and confirmed that the Kind cluster uses **kindnet** as its CNI.
+
+> ⚠️ `kindnet` provides Pod networking but **does not enforce NetworkPolicy**. A CNI such as **Calico** or **Cilium** is required for enforcement. If a policy has no visible effect, check CNI support first.
+
+---
+
+## 9. Root Cause Summary
+
+| Exercise | Symptom | Root Cause | Fix | Prevention |
+|----------|---------|------------|-----|------------|
+| A | ImagePullBackOff | Invalid image tag | `kubectl set image` to `nginx:1.27` | Pin valid tags, validate in CI |
+| B | CrashLoopBackOff | Process exits immediately (`exit 1`) | Long-running command (`sleep 36000`) | Proper entrypoints and probes |
+| C | No endpoints | Selector `wrong-app` ≠ label `web-demo` | Patch Service selector | Shared Helm/Kustomize labels |
+| D | PVC Pending (analysis) | No PV / broken provisioner / WaitForFirstConsumer | Investigation only | Check StorageClass health |
+| E | Policy not enforced (analysis) | kindnet lacks NetworkPolicy support | Use Calico/Cilium | Verify CNI capabilities |
+
+📸 **Verified fixes:**
+
+![Verified fixes](screenshots/4-verified-fixes.png)
+
+📸 **Root-cause summary:**
+
+![Root cause summary](screenshots/5-root-cause-summary.png)
+
+---
+
+## 10. Interview Questions & Answers
+
+**1. ImagePullBackOff vs CrashLoopBackOff?**
+`ImagePullBackOff` means the kubelet cannot pull the image (wrong tag, missing registry credentials, or a network problem), so the container never starts. `CrashLoopBackOff` means the image was pulled and the container started, but the process keeps exiting, so Kubernetes restarts it with an increasing back-off delay.
+
+**2. How do you investigate a Pending Pod?**
+Run `kubectl describe pod` and read the Events. Common causes are insufficient CPU/memory, node selectors/taints without matching tolerations, or an unbound PVC.
+
+**3. Why can a Service have no endpoints?**
+The selector does not match any Pod labels, the Pods are not Ready (failing readiness probes), or no Pods exist. Check with `kubectl get endpointslices` and `kubectl get pods --show-labels`.
+
+**4. How do you view logs from a previous crashed container?**
+```bash
+kubectl logs <pod> --previous -n <namespace>
+```
+
+**5. Why inspect events before changing resources?**
+Events show what the cluster actually reports (scheduling, pull errors, probe failures). Acting on evidence avoids guesswork, prevents unnecessary changes, and keeps the fix minimal and safe.
+
+---
+
+## 11. Cleanup
+
+```bash
+kubectl config current-context        # confirm the context first
 kubectl delete namespace day50-lab
 kubectl config set-context --current --namespace=default
-kubectl get ns
 ```
+
+- Deleted the isolated `day50-lab` namespace.
+- Reset the default namespace for the context.
+- Stopped the local Kind cluster container to free system resources.
+- **Zero cloud/AWS resources were created.**
+
+---
+
+## 12. Completion Checklist
+
+- [x] Fixed the image pull issue
+- [x] Diagnosed and repaired the crashing container
+- [x] Fixed the Service selector
+- [x] Investigated PVC and NetworkPolicy behavior
+- [x] Documented root causes and verified fixes
+- [x] Cleaned up the lab namespace
+
+---
+
+## 13. Key Takeaways
+
+- Always **observe → inspect events → check logs → fix → verify**.
+- Events are the first place to look; `--previous` logs reveal crashed containers.
+- Service problems are usually **label/selector mismatches**.
+- Storage and network policy issues often come from the **cluster setup** (provisioner, CNI), not the workload.
+- Isolated namespaces make break-and-fix practice safe.
+
+---
+
+*Part of the **90 Days DevOps Challenge** — Day 50 ✅*
