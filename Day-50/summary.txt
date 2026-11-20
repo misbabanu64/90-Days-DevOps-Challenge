@@ -1,0 +1,33 @@
+========================================================================
+DEVOPS WINTER ARC - DAY 50: KUBERNETES BREAK-AND-FIX LAB SUMMARY
+========================================================================
+1. Exercise A (ImagePullBackOff)
+   - Symptom     : Pod stuck in ErrImagePull / ImagePullBackOff.
+   - Root Cause  : Invalid image tag 'nginx:tag-does-not-exist' not found in registry.
+   - Fix         : Updated image to valid tag 'nginx:1.27' via kubectl set image.
+   - Verification: Rollout succeeded; Pod status 1/1 Running.
+   - Prevention  : Pin verified immutable image tags in CI/CD before deployment.
+
+2. Exercise B (CrashLoopBackOff)
+   - Symptom     : Pod repeatedly crashing (Error / CrashLoopBackOff) with rising restarts.
+   - Root Cause  : Container executed '/bin/sh -c "exit 1"' and terminated immediately.
+   - Fix         : Patched container command to '["sh", "-c", "sleep 36000"]'.
+   - Verification: Rollout succeeded; Pod status 1/1 Running with 0 restarts.
+   - Prevention  : Ensure containers run a foreground long-lived process and test locally.
+
+3. Exercise C (Service Selector Mismatch)
+   - Symptom     : Service 'web-svc' had empty EndpointSlices (<unset>).
+   - Root Cause  : Service selector 'app=wrong-app' did not match Pod label 'app=web-demo'.
+   - Fix         : Patched Service selector back to '{"app": "web-demo"}'.
+   - Verification: EndpointSlices populated with Pod IP; Service routing restored.
+   - Prevention  : Manage Deployment and Service labels via shared Helm/Kustomize templates.
+
+4. Exercise D & E (PVC & NetworkPolicy Investigation)
+   - PVC Pending : Occurs when no matching PV exists, StorageClass is missing/broken,
+                   or WaitForFirstConsumer waits for a Pod to be scheduled.
+   - NetworkPolicy: Kind uses 'kindnet' CNI by default, which does not enforce
+                    NetworkPolicies (requires Calico/Cilium for enforcement).
+
+5. Cleanup Verification
+   - Deleted isolated namespace 'day50-lab'; zero cloud/AWS resources created.
+========================================================================
