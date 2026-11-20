@@ -38,6 +38,10 @@ kubectl config set-context --current --namespace=day50-lab
   kubectl describe pod <pod-name> -n day50-lab
   ```
   *Events Output:* `Failed to pull image "nginx:tag-does-not-exist": failed to resolve reference "docker.io/library/nginx:tag-does-not-exist": not found`.
+
+  **Output Screenshot (Before Repair):**
+  ![ImagePullBackOff and Events before repair](./1-imagepullbackoff.png)
+
 - **Root Cause:** The Deployment referenced a non-existent image tag (`nginx:tag-does-not-exist`) that could not be resolved or pulled from Docker Hub.
 - **Fix:** Updated the Deployment container image to a valid existing tag (`nginx:1.27`):
   ```bash
@@ -62,6 +66,10 @@ kubectl config set-context --current --namespace=day50-lab
   kubectl get events -n day50-lab --sort-by='.lastTimestamp'
   ```
   *Events Output:* `Warning BackOff: Back-off restarting failed container busybox in pod crash-demo-*`.
+
+  **Output Screenshot (Before Repair):**
+  ![CrashLoopBackOff logs and Events](./2-crashloopbackoff.png)
+
 - **Root Cause:** The container ran `/bin/sh -c "exit 1"`, exiting immediately with a non-zero status code. Because a Deployment requires a continuously running foreground process, Kubernetes repeatedly restarted the container with exponential backoff.
 - **Fix:** Patched the container's `command` field to run a long-lived foreground process (`sleep 36000`):
   ```bash
@@ -89,6 +97,10 @@ kubectl config set-context --current --namespace=day50-lab
   kubectl get endpointslices -n day50-lab
   ```
   *Output:* Pod had label `app=web-demo`, whereas `web-svc` selector was `app=wrong-app`, resulting in `<unset>` endpoints in `EndpointSlices`.
+
+  **Output Screenshot (Before Repair):**
+  ![Service selector mismatch and empty EndpointSlices](./3-service-mismatch.png)
+
 - **Root Cause:** The Service's `spec.selector` (`app=wrong-app`) did not match the Pod template labels (`app=web-demo`), so the EndpointSlice controller could not associate any Ready Pods with the Service.
 - **Fix:** Restored the Service selector to match the Pod's `app=web-demo` label:
   ```bash
@@ -100,6 +112,10 @@ kubectl config set-context --current --namespace=day50-lab
   kubectl get deploy,rs,pods,svc -n day50-lab
   ```
   *Result:* `EndpointSlices` immediately populated with the `web-demo` Pod IP address, and all workloads were `1/1 Running`.
+
+  **Output Screenshot (After All Fixes & Rollout Verification):**
+  ![Successful rollout and Ready Pods after fixes](./4-verified-fixes.png)
+
 - **Prevention Tip:** Manage Service selectors and Deployment Pod labels from shared variables/templates in Helm or Kustomize so they cannot drift independently.
 
 ---
@@ -134,6 +150,13 @@ kubectl config set-context --current --namespace=day50-lab
 
 ---
 
+## Root-Cause & Verification Summary
+
+**Output Screenshot (Summary):**
+![Concise root-cause and verification summary](./5-root-cause-summary.png)
+
+---
+
 ## Interview Questions & Answers
 
 1. **What is the difference between `ImagePullBackOff` and `CrashLoopBackOff`?**
@@ -162,12 +185,3 @@ kubectl delete namespace day50-lab
 kubectl config set-context --current --namespace=default
 kubectl get ns
 ```
-
----
-
-## Screenshots Included
-1. `1-imagepullbackoff.png` — `ImagePullBackOff` status and Events before repair.
-2. `2-crashloopbackoff.png` — `CrashLoopBackOff` status and Events before repair.
-3. `3-service-mismatch.png` — Service selector mismatch (`app=wrong-app` vs `app=web-demo`) and empty `EndpointSlices`.
-4. `4-verified-fixes.png` — Successful rollouts, `1/1 Running` Ready Pods, and populated `EndpointSlices` after fixes.
-5. `5-root-cause-summary.png` — Concise root-cause and verification summary.
