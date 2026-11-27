@@ -54,6 +54,17 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 | 44 | Kubernetes Production Ingress & Traffic Management | [Day-44](./Day-44) |
 | 45 | Kubernetes Production: HPA & Advanced Autoscaling | [Day-45](./Day-45) |
 | 46 | Kubernetes Production: StatefulSets & DaemonSets | [Day-46](./Day-46) |
+| 47 | Kubernetes Production: NetworkPolicies & Security | [Day-47](./Day-47) |
+| 48 | Kubernetes Observability: Monitoring & Logging | [Day-48](./Day-48) |
+| 49 | Kubernetes Package Management with Helm | [Day-49](./Day-49) |
+| 50 | Infrastructure as Code (IaC) & Terraform Fundamentals | [Day-50](./Day-50) |
+| 51 | Terraform Providers, Resources & HCL Basics | [Day-51](./Day-51) |
+| 52 | Terraform State Management & Lifecycle | [Day-52](./Day-52) |
+| 53 | Terraform Variables, Outputs & Data Sources | [Day-53](./Day-53) |
+| 54 | Terraform Modules & Reusable Infrastructure | [Day-54](./Day-54) |
+| 55 | Terraform Remote State & Locking (S3 & DynamoDB) | [Day-55](./Day-55) |
+| 56 | Terraform Workspaces & Multi-Environment Setup | [Day-56](./Day-56) |
+| 57 | Terraform Functions & Expressions | [Day-57](./Day-57-Terraforn-expressions) |
 
 ## Skills I am building
 
