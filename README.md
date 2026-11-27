@@ -2,7 +2,7 @@
 
 My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Docker Compose and Container Security. Every day has its own folder with commands, evidence (screenshots/reports) and a README explaining what I did and learned.
 
-**Status:** Day 15 of 90 completed 🚀
+**Status:** Day 57 of 90 completed 🚀
 
 ## Progress
 
