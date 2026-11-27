@@ -68,7 +68,7 @@ My hands-on DevOps learning journey: Linux, Git, Networking, Nginx, Docker, Dock
 
 ## Skills I am building
 
-Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS (VPC, IAM, S3, RDS, EKS, ALB) | CI/CD | Kubernetes
+Linux | Git | Networking | Nginx | Docker | Docker Compose | Trivy / DevSecOps | AWS (VPC, IAM, S3, RDS, EKS, ALB) | CI/CD | Kubernetes | Terraform
 
 ## How each day is organised
 
