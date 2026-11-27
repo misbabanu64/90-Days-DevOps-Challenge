@@ -1,0 +1,23 @@
+# Reference Example Only: Dynamic Block for AWS Security Group Ingress Rules
+# (Do not apply - no AWS resources created)
+
+variable "ingress_ports" {
+  type    = list(number)
+  default = [22, 80, 443]
+}
+
+resource "aws_security_group" "web_sg" {
+  name        = "dynamic-web-sg"
+  description = "Security group with dynamic ingress rules"
+
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      description = "Allow port ${ingress.value}"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
