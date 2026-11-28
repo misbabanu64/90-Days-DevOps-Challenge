@@ -56,7 +56,7 @@ terraform validate
 Success! The configuration is valid.
 ```
 
-![Terraform fmt, init, and validate output](./01-fmt-validate.png)
+![Terraform fmt, init, and validate output](./screenshots/01-fmt-validate.png)
 
 ---
 
@@ -88,7 +88,7 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-![Terraform plan with valid dev input](./02-terraform-plan-dev.png)
+![Terraform plan with valid dev input](./screenshots/02-terraform-plan-dev.png)
 
 ---
 
@@ -109,7 +109,7 @@ Updated `terraform.tfvars` to `environment = "stage"` and ran `terraform plan`.
 │ This was checked by the validation rule at main.tf:13,3-13.
 ```
 
-![Invalid input validation error](./03-invalid-input-error.png)
+![Invalid input validation error](./screenshots/03-invalid-input-error.png)
 
 ---
 
@@ -132,7 +132,7 @@ $ cat dev.txt
 Validation passed for dev.
 ```
 
-![Corrected apply and dev.txt verification](./04-corrected-apply-verify.png)
+![Corrected apply and dev.txt verification](./screenshots/04-corrected-apply-verify.png)
 
 ---
 
